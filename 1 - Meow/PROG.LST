@@ -1,0 +1,54 @@
+Turbo Assembler	 Version 4.1	    02/08/24 23:16:54	    Page 1
+prog.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     .186
+      4				     org 100h
+      5
+      6	0100  B4 02		     Start:	 mov ah, 02h
+      7	0102  BA 010Cr				 mov dx, offset	MeowStr
+      8	0105  CD 21				 int 21h
+      9
+     10	0107  B8 4C13				 mov ax, 4c13h
+     11	010A  CD 21				 int 21h
+     12
+     13	010C  4D 4D 45 45 4F 4F	57+  MeowStr	 db 'MMEEOOWW',	0Dh, 0Ah, '19',	19h, '$'
+     14	      57 0D 0A 31 39 19	24
+     15
+     16				     end	 Start
+Turbo Assembler	 Version 4.1	    02/08/24 23:16:54	    Page 2
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/08/24"
+??FILENAME			  Text	 "prog	  "
+??TIME				  Text	 "23:16:54"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0103H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 PROG
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+MEOWSTR				  Byte	 DGROUP:010C
+START				  Near	 DGROUP:0100
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  011A Word	  Public  CODE
+
