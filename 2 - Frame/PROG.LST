@@ -1,0 +1,142 @@
+Turbo Assembler	 Version 4.1	    02/11/24 22:56:38	    Page 1
+prog.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     .286
+      4				     org 100h
+      5
+      6	0100			     Start:
+      7	0100  BB B800				 mov bx, 0b800h
+      8	0103  8E C3				 mov es, bx
+      9
+     10	0105  68 0C28				 push 0C28h  ; row=12d,	col=40d
+     11	0108  68 1300				 push 1300h  ; n=3; empty
+     12	010B  68 640B				 push 6400h+''	 ; S1, 01100100
+     13	010E  68 640C				 push 6400h+''	 ; S2, 01100100
+     14	0111  68 640B				 push 6400h+''	 ; S3, 01100100
+     15
+     16	0114  E8 0005				 call DrawLine
+     17
+     18	0117  B8 4C13				 mov ax, 4c13h
+     19	011A  CD 21				 int 21h
+     20
+     21				     ;-------------------------------------------
+     22				     ; Description:
+     23				     ;	 Draws in videomem one line in
+     24				     ;	 the following way:
+     25				     ;	 S1 S2 ... (N times) ... S2 S3
+     26				     ;	 where S1, S2 and S3 are two bytes:
+     27				     ;	 symbol	byte and attributes byte.
+     28				     ;
+     29				     ; Args (in	stack from bottom to top):
+     30				     ;	 - Row number of the S1	symbol
+     31				     ;	 - Col number of the S1	symbol
+     32				     ;	 - N (see above), must be > 0
+     33				     ;	 - empty
+     34				     ;	 - S1 (symbol byte)  ?????????????????????
+     35				     ;	 - S1 (attribute byte)
+     36				     ;	 - S2 (symbol byte)
+     37				     ;	 - S2 (attribute byte)
+     38				     ;	 - S3 (symbol byte)
+     39				     ;	 - S3 (attribute byte)
+     40				     ;	 - Ret code
+     41				     ; ATTENTION:
+     42				     ;	 ES must be already set	to 0b800h!
+     43				     ;	 All args must have sensible values,
+     44				     ;	 otherwise UB. Rows and	Cols start with
+     45				     ;	 zero.
+     46				     ; DESTROYS:
+     47				     ;	 AX, BX, CX
+     48				     ;-------------------------------------------
+     49	011C			     DrawLine	 proc
+     50
+     51						 ; counting in bx address of the S1
+     52	011C  33 DB				 xor bx, bx
+     53
+     54	011E  8B EC				 mov bp, sp
+     55
+     56						 ; trying to do	row*80d	in ax
+     57	0120  8A 46 0B				 mov al, byte ptr [bp+11d] ; row num
+Turbo Assembler	 Version 4.1	    02/11/24 22:56:38	    Page 2
+prog.asm
+
+
+
+     58
+     59	0123  B3 50				 mov bl, 80d
+     60	0125  F6 E3				 mul bl
+     61
+     62	0127  8B D8				 mov bx, ax
+     63
+     64						 ; we need col num as a	word
+     65	0129  8A 46 0A				 mov al, [bp+10d]
+     66	012C  98				 cbw
+     67
+     68						 ; adding col num
+     69	012D  03 D8				 add bx, ax
+     70
+     71						 ; bx*=2, to get real address in videomem
+     72	012F  D1 E3				 shl bx, 1
+     73
+     74						 ; S1
+     75	0131  8B 46 06				 mov ax, word ptr [bp+6d] ; ax = S1 (symbol+attrib)
+     76	0134  26: 89 07				 mov es:[bx], ax
+     77						 ; S1 END
+     78
+     79						 ; S2 (N times)
+     80	0137  8B 46 04				 mov ax, [bp+4d] ; ax =	S2 (symbol+attrib)
+     81
+     82	013A  32 C9				 xor cl, cl
+     83	013C  8A 4E 09				 mov cl, [bp+9d] ; cx =	N
+     84	013F  83 C3 02		     DrawLineL:	 add bx, 2h
+     85	0142  26: 89 07				 mov es:[bx], ax
+     86	0145  E2 F8				 loop DrawLineL
+     87						 ; S2 END
+     88
+     89						 ; S3
+     90	0147  83 C3 02				 add bx, 2h
+     91	014A  8B 46 02				 mov ax, word ptr [bp+2d] ; ax = S3 (symbol+attrib)
+     92	014D  26: 89 07				 mov es:[bx], ax
+     93						 ; S3 END
+     94
+     95	0150  C3				 ret
+     96	0151					 endp
+     97				     ;-------------------------------------------
+     98				     end	 Start
+Turbo Assembler	 Version 4.1	    02/11/24 22:56:38	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/11/24"
+??FILENAME			  Text	 "prog	  "
+??TIME				  Text	 "22:56:38"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0707H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 PROG
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+DRAWLINE			  Near	 DGROUP:011C
+DRAWLINEL			  Near	 DGROUP:013F
+START				  Near	 DGROUP:0100
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  0151 Word	  Public  CODE
+

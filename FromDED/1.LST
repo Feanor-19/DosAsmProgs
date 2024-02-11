@@ -1,0 +1,113 @@
+Turbo Assembler	 Version 4.1	    02/11/24 20:01:30	    Page 1
+1.asm
+
+
+
+      1				     .286
+      2	0000			     .model tiny
+      3	0000			     .code
+      4				     org 100h
+      5
+      6	0100  B4 09		     Start:	     mov ah, 09h
+      7	0102  BA 0146r				     mov dx, offset HelloStr
+      8	0105  CD 21				     int 21h
+      9	0107  B4 01				     mov ah, 01h
+     10	0109  CD 21				     int 21h
+     11
+     12	010B  0E				     push cs
+     13	010C  8F 06 013Er			     pop RetSeg
+     14
+     15	0110  BF B800				     mov di, 0b800h
+     16	0113  8E C7				     mov es, di
+     17	0115  33 FF				     xor di, di
+     18	0117  33 F6				     xor si, si
+     19	0119  33 C9				     xor cx, cx
+     20	011B  49				     dec cx
+     21	011C  FC				     cld
+     22	011D  F3> A4				     rep movsb
+     23
+     24	011F  06				     push es
+     25	0120  68 0124r				     push offset Next
+     26	0123  CB				     retf
+     27	0124  90		     Next:	     nop
+     28
+     29	0125  B8 4E21				     mov ax, (4eh shl 8) or '!'
+     30	0128  BF 0320				     mov di, 80d*2 * 5
+     31	012B  B9 0050				     mov cx, 80d
+     32	012E  57				     push di
+     33	012F  F3> AB				     rep stosw
+     34
+     35	0131  BE 016Dr				     mov si, offset HelloVideo
+     36	0134  5F				     pop di
+     37	0135  B9 003C 90			     mov cx, HelloVideoLen
+     38	0139  F3> A4				     rep movsb
+     39
+     40	013B  EA				     db	0eah
+     41	013C  0140r				     dw	offset Next2
+     42	013E  0000		     RetSeg	     dw	0
+     43	0140  90		     Next2:	     nop
+     44
+     45	0141  B8 4C00				     mov ax, 4c00h
+     46	0144  CD 21				     int 21h
+     47
+     48	0146  3C 3C 3C 20 20 20	48+  HelloStr	     db	'<<<   Hello meow, press a key...   >>>$'
+     49	      65 6C 6C 6F 20 6D	65+
+     50	      6F 77 2C 20 70 72	65+
+     51	      73 73 20 61 20 6B	65+
+     52	      79 2E 2E 2E 20 20	20+
+     53	      3E 3E 3E 24
+     54	016D  3C 20 3C 20 3C 20	20+  HelloVideo	     db	'< < <	     H e l l o	 f r o m   0 x b 8 0 0 h       > > > '
+     55	      20 20 20 20 20 48	20+
+     56	      65 20 6C 20 6C 20	6F+
+     57	      20 20 20 66 20 72	20+
+Turbo Assembler	 Version 4.1	    02/11/24 20:01:30	    Page 2
+1.asm
+
+
+
+     58	      6F 20 6D 20 20 20	30+
+     59	      20 78 20 62 20 38	20+
+     60	      30 20 30 20 68 20	20+
+     61	      20 20 20 20 20 3E	20+
+     62	      3E 20 3E 20
+     63	      =003C		     HelloVideoLen   equ $ - HelloVideo
+     64
+     65				     end	     Start
+Turbo Assembler	 Version 4.1	    02/11/24 20:01:30	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/11/24"
+??FILENAME			  Text	 "1	  "
+??TIME				  Text	 "20:01:30"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0707H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 1
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+HELLOSTR			  Byte	 DGROUP:0146
+HELLOVIDEO			  Byte	 DGROUP:016D
+HELLOVIDEOLEN			  Number 003C
+NEXT				  Near	 DGROUP:0124
+NEXT2				  Near	 DGROUP:0140
+RETSEG				  Word	 DGROUP:013E
+START				  Near	 DGROUP:0100
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  01A9 Word	  Public  CODE
+
