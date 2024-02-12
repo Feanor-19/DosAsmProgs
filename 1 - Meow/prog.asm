@@ -3,7 +3,7 @@
 .186
 org 100h
 
-Start:      mov ah, 02h
+Start:      mov ah, 09h
             mov dx, offset MeowStr
             int 21h
 

@@ -12,9 +12,9 @@
 ;   1) Row number of the S1 symbol
 ;   2) Col number of the S1 symbol
 ;   3) N (see above), must be > 0
-;   4) S1 (attribute byte, symbol byte)
-;   5) S2 (attribute byte, symbol byte)
-;   6) S3 (attribute byte, symbol byte)
+;   4) S1 (L: attribute, H: symbol byte)
+;   5) S2 (L: attribute, H: symbol byte)
+;   6) S3 (L: attribute, H: symbol byte)
 ;   7) Ret code
 ; ATTENTION:
 ;   ES must be already set to 0b800h!
@@ -26,12 +26,12 @@
 ;-------------------------------------------
 DrawLine    proc
 
-ARG_ROW     equ     0Ch
-ARG_COL     equ     0Ah
-ARG_N       equ     8h
-ARG_S1      equ     6h
-ARG_S2      equ     4h
-ARG_S3      equ     2h
+DRLN_ARG_ROW     equ     0Ch
+DRLN_ARG_COL     equ     0Ah
+DRLN_ARG_N       equ     8h
+DRLN_ARG_S1      equ     6h
+DRLN_ARG_S2      equ     4h
+DRLN_ARG_S3      equ     2h
 
             mov bp, sp
 
@@ -41,14 +41,14 @@ ARG_S3      equ     2h
             xor bx, bx
 
             ; trying to do row*80d in ax
-            mov ax, [bp + ARG_ROW]
+            mov ax, [bp + DRLN_ARG_ROW]
             mov bl, 80d
             mul bl
 
             mov bx, ax
 
             ; adding col num
-            mov ax, [bp + ARG_COL]
+            mov ax, [bp + DRLN_ARG_COL]
             add bx, ax
 
             ; bx*=2, to get real address in videomem
@@ -56,15 +56,15 @@ ARG_S3      equ     2h
 
             ; ================================
             ; S1
-            mov ax, word ptr [bp + ARG_S1] ; ax = S1 (symbol+attrib)
+            mov ax, word ptr [bp + DRLN_ARG_S1] ; ax = S1 (symbol+attrib)
             mov es:[bx], ax
 
             ; ================================
             ; S2 (N times)
-            mov ax, [bp + ARG_S2] ; ax = S2 (symbol+attrib)
+            mov ax, [bp + DRLN_ARG_S2] ; ax = S2 (symbol+attrib)
 
             xor cx, cx
-            mov cx, [bp + ARG_N] ; cx = N
+            mov cx, [bp + DRLN_ARG_N] ; cx = N
 DrawLineL:  add bx, 2h
             mov es:[bx], ax
             loop DrawLineL
@@ -72,7 +72,7 @@ DrawLineL:  add bx, 2h
             ; ================================
             ; S3
             add bx, 2h
-            mov ax, word ptr [bp + ARG_S3] ; ax = S3 (symbol+attrib)
+            mov ax, word ptr [bp + DRLN_ARG_S3] ; ax = S3 (symbol+attrib)
             mov es:[bx], ax
 
             ; ================================

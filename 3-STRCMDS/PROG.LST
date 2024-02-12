@@ -1,0 +1,147 @@
+Turbo Assembler	 Version 4.1	    02/12/24 22:31:01	    Page 1
+prog.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     .286
+      4				     org 100h
+      5
+      6	0100			     Start:
+      7	0100  1E				 push ds
+      8	0101  07				 pop es
+      9
+     10	0102  BF 0110r				 mov di, offset	X
+     11						 ;call Strlen
+     12
+     13	0105  B8 B9A2				 mov ax, 0B9A2h
+     14	0108  E8 0016				 call PrnW
+     15
+     16	010B  B8 4C13				 mov ax, 4c13h
+     17	010E  CD 21				 int 21h
+     18
+     19	0110  73 74 72 24	     X db 'str$'
+     20
+     21				     ;-------------------------------------------
+     22				     ; Strlen
+     23				     ; Description:
+     24				     ;	 Counts	string's len.
+     25				     ; Result:
+     26				     ;	 In AX.
+     27				     ; Assumes:
+     28				     ;	 String's address is in	ES:DI. Terminating
+     29				     ;	 symbol	is '$'.
+     30				     ; ATTENTION:
+     31				     ;	 UB if string's	len is more than a word's
+     32				     ;	 max value.
+     33				     ; DESTROYS:
+     34				     ;	 AX, CX
+     35				     ;-------------------------------------------
+     36	0114			     Strlen	 proc
+     37
+     38	      =FFFF		     STRLEN_CX_DEF_VAL equ 0FFFFh
+     39
+     40	0114  B0 24				 mov al, '$'
+     41	0116  B9 FFFF				 mov cx, STRLEN_CX_DEF_VAL
+     42	0119  F2> AE				 repne scasb
+     43
+     44	011B  B8 FFFF				 mov ax, STRLEN_CX_DEF_VAL
+     45	011E  2B C1				 sub ax, cx
+     46
+     47	0120  C3				 ret
+     48	0121					 endp
+     49				     ;-------------------------------------------
+     50
+     51				     ;-------------------------------------------
+     52				     ; PrnW
+     53				     ; Description:
+     54				     ;	 Prints	to standart output AX
+     55				     ;	 in hex	(using int 21h (02h))
+     56				     ; DESTROYS:
+     57				     ;	 CX, DX
+Turbo Assembler	 Version 4.1	    02/12/24 22:31:01	    Page 2
+prog.asm
+
+
+
+     58				     ;-------------------------------------------
+     59	0121			     PrnW	 proc
+     60
+     61	0121  BE 0003				 mov si, 3h	     ; starting	from smallest bytes,
+     62								     ; which are in the	rightmost character
+     63
+     64						 ; loop	start
+     65	0124  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
+     66	0127  8A D0		     PrnWL:	 mov dl, al
+     67	0129  80 E2 0F				 and dl, 00001111b
+     68	012C  80 FA 0A				 cmp dl, 10d
+     69	012F  7D 05				 jge PrnWLtr
+     70
+     71	0131  80 C2 30				 add dl, '0' ; '0' ... '9'
+     72	0134  EB 06				 jmp short PrnWFin
+     73
+     74	0136  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
+     75	0139  80 EA 0A				 sub dl, 0Ah
+     76
+     77	013C  88 94 0150r	     PrnWFin:	 mov byte ptr [PrnWData	+ si], dl
+     78	0140  C1 C8 04				 ror ax, 4
+     79	0143  4E				 dec si
+     80	0144  E2 E1				 loop PrnWL
+     81						 ; loop	end
+     82
+     83						 ; printing
+     84	0146  50				 push ax		 ; saving ax
+     85	0147  BA 0150r				 mov dx, offset	PRNWDATA
+     86	014A  B4 09				 mov ah, 09h
+     87	014C  CD 21				 int 21h
+     88	014E  58				 pop ax			 ; ressurecting	ax
+     89
+     90						 ; end
+     91	014F  C3				 ret
+     92	0150					 endp
+     93
+     94	0150  ?? ?? ?? ?? 24	     PrnWData	 db ?, ?, ?, ?,	'$'
+     95				     ;-------------------------------------------
+     96
+     97				     end	 Start
+Turbo Assembler	 Version 4.1	    02/12/24 22:31:01	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/12/24"
+??FILENAME			  Text	 "prog	  "
+??TIME				  Text	 "22:31:01"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0707H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 PROG
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+PRNW				  Near	 DGROUP:0121
+PRNWDATA			  Byte	 DGROUP:0150
+PRNWFIN				  Near	 DGROUP:013C
+PRNWL				  Near	 DGROUP:0127
+PRNWLTR				  Near	 DGROUP:0136
+START				  Near	 DGROUP:0100
+STRLEN				  Near	 DGROUP:0114
+STRLEN_CX_DEF_VAL		  Number FFFF
+X				  Byte	 DGROUP:0110
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  0155 Word	  Public  CODE
+

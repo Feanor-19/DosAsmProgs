@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    02/12/24 17:12:01	    Page 1
+Turbo Assembler	 Version 4.1	    02/12/24 19:03:25	    Page 1
 prog.asm
 
 
@@ -12,187 +12,257 @@ prog.asm
       7	0100  BB B800				 mov bx, 0b800h
       8	0103  8E C3				 mov es, bx
       9
-     10						 ;call DrawFrame
+     10	0105  8B D4				 mov dx, sp  ; saving old sp
      11
-     12						 ;push 0C28h  ;	row=12d, col=40d
-     13						 ;push 1300h  ;	n=3; empty
-     14						 ;push 6400h+''  ; S1,	01100100
-     15						 ;push 6400h+''  ; S2,	01100100
-     16						 ;push 6400h+''  ; S3,	01100100
-     17
-     18	0105  6A 0C				 push 12d	 ; row
-     19	0107  6A 14				 push 20d	 ; col
-     20	0109  6A 03				 push 3d	 ; N
-     21	010B  68 640B				 push 6400h+''	 ; S1, 01100100
-     22	010E  68 640C				 push 6400h+''	 ; S2, 01100100
-     23	0111  68 640B				 push 6400h+''	 ; S3, 01100100
+     12	0107  6A 07				 push 7d     ; row
+     13	0109  6A 13				 push 19d    ; col
+     14	010B  6A 26				 push 38d    ; W
+     15	010D  6A 06				 push 6d     ; H
+     16
+     17	010F  68 646F				 push  6400h + 'o'  ; TL 01100100
+     18	0112  68 643D				 push  6400h + '='  ; HL 01100100
+     19	0115  68 646F				 push  6400h + 'o'  ; TR 01100100
+     20	0118  68 647C				 push  6400h + '|'  ; VL 01100100
+     21	011B  68 F941				 push 0F900h + 'A'  ; IN 11111001
+     22	011E  68 646F				 push  6400h + 'o'  ; BL 01100100
+     23	0121  68 646F				 push  6400h + 'o'  ; BR 01100100
      24
-     25	0114  E8 0005				 call DrawLine
+     25	0124  E8 003B				 call DrawFrame
      26
-     27	0117  B8 4C13				 mov ax, 4c13h
-     28	011A  CD 21				 int 21h
-     29
-     30				     include drhl.asm
-1    31				     ;-------------------------------------------
-1    32				     ; DrawLine
-1    33				     ; Description:
-1    34				     ;	 Draws in videomem one line in
-1    35				     ;	 the following way:
-1    36				     ;	 S1 S2 ... (N times) ... S2 S3
-1    37				     ;	 where S1, S2 and S3 are two bytes:
-1    38				     ;	 symbol	byte and attributes byte.
-1    39				     ;
-1    40				     ; Args (in	stack from bottom to top,
-1    41				     ; EACH LINE MEANS A WORD -	TWO BYTES):
-1    42				     ;	 1) Row	number of the S1 symbol
-1    43				     ;	 2) Col	number of the S1 symbol
-1    44				     ;	 3) N (see above), must	be > 0
-1    45				     ;	 4) S1 (attribute byte,	symbol byte)
-1    46				     ;	 5) S2 (attribute byte,	symbol byte)
-1    47				     ;	 6) S3 (attribute byte,	symbol byte)
-1    48				     ;	 7) Ret	code
-1    49				     ; ATTENTION:
-1    50				     ;	 ES must be already set	to 0b800h!
-1    51				     ;	 All args must have sensible values,
-1    52				     ;	 otherwise UB. Rows and	Cols start with
-1    53				     ;	 zero.
-1    54				     ; DESTROYS:
-1    55				     ;	 AX, BX, CX, BP
-1    56				     ;-------------------------------------------
-1    57	011C			     DrawLine	 proc
-Turbo Assembler	 Version 4.1	    02/12/24 17:12:01	    Page 2
+     27	0127  8B E2				 mov sp, dx  ; resurrect sp
+     28
+     29						 ;push 12d	  ; row
+     30						 ;push 20d	  ; col
+     31						 ;push 3d	  ; N
+     32						 ;push 6400h+''  ; S1,	01100100
+     33						 ;push 6400h+''  ; S2,	01100100
+     34						 ;push 6400h+''  ; S3,	01100100
+     35						 ;call DrawLine
+     36
+     37	0129  B8 4C13				 mov ax, 4c13h
+     38	012C  CD 21				 int 21h
+     39
+     40				     include drhl.asm
+1    41				     ;-------------------------------------------
+1    42				     ; DrawLine
+1    43				     ; Description:
+1    44				     ;	 Draws in videomem one line in
+1    45				     ;	 the following way:
+1    46				     ;	 S1 S2 ... (N times) ... S2 S3
+1    47				     ;	 where S1, S2 and S3 are two bytes:
+1    48				     ;	 symbol	byte and attributes byte.
+1    49				     ;
+1    50				     ; Args (in	stack from bottom to top,
+1    51				     ; EACH LINE MEANS A WORD -	TWO BYTES):
+1    52				     ;	 1) Row	number of the S1 symbol
+1    53				     ;	 2) Col	number of the S1 symbol
+1    54				     ;	 3) N (see above), must	be > 0
+1    55				     ;	 4) S1 (L: attribute, H: symbol	byte)
+1    56				     ;	 5) S2 (L: attribute, H: symbol	byte)
+1    57				     ;	 6) S3 (L: attribute, H: symbol	byte)
+Turbo Assembler	 Version 4.1	    02/12/24 19:03:25	    Page 2
 prog.asm
 
 
 
-1    58
-1    59	      =000C		     ARG_ROW	 equ	 0Ch
-1    60	      =000A		     ARG_COL	 equ	 0Ah
-1    61	      =0008		     ARG_N	 equ	 8h
-1    62	      =0006		     ARG_S1	 equ	 6h
-1    63	      =0004		     ARG_S2	 equ	 4h
-1    64	      =0002		     ARG_S3	 equ	 2h
-1    65
-1    66	011C  8B EC				 mov bp, sp
-1    67
-1    68						 ; ================================
-1    69						 ; counting in bx address of the S1
-1    70
-1    71	011E  33 DB				 xor bx, bx
-1    72
-1    73						 ; trying to do	row*80d	in ax
-1    74	0120  8B 46 0C				 mov ax, [bp + ARG_ROW]
-1    75	0123  B3 50				 mov bl, 80d
-1    76	0125  F6 E3				 mul bl
+1    58				     ;	 7) Ret	code
+1    59				     ; ATTENTION:
+1    60				     ;	 ES must be already set	to 0b800h!
+1    61				     ;	 All args must have sensible values,
+1    62				     ;	 otherwise UB. Rows and	Cols start with
+1    63				     ;	 zero.
+1    64				     ; DESTROYS:
+1    65				     ;	 AX, BX, CX, BP
+1    66				     ;-------------------------------------------
+1    67	012E			     DrawLine	 proc
+1    68
+1    69	      =000C		     DRLN_ARG_ROW     equ     0Ch
+1    70	      =000A		     DRLN_ARG_COL     equ     0Ah
+1    71	      =0008		     DRLN_ARG_N	      equ     8h
+1    72	      =0006		     DRLN_ARG_S1      equ     6h
+1    73	      =0004		     DRLN_ARG_S2      equ     4h
+1    74	      =0002		     DRLN_ARG_S3      equ     2h
+1    75
+1    76	012E  8B EC				 mov bp, sp
 1    77
-1    78	0127  8B D8				 mov bx, ax
-1    79
-1    80						 ; adding col num
-1    81	0129  8B 46 0A				 mov ax, [bp + ARG_COL]
-1    82	012C  03 D8				 add bx, ax
-1    83
-1    84						 ; bx*=2, to get real address in videomem
-1    85	012E  D1 E3				 shl bx, 1
-1    86
-1    87						 ; ================================
-1    88						 ; S1
-1    89	0130  8B 46 06				 mov ax, word ptr [bp +	ARG_S1]	; ax = S1 (symbol+attrib)
-1    90	0133  26: 89 07				 mov es:[bx], ax
-1    91
-1    92						 ; ================================
-1    93						 ; S2 (N times)
-1    94	0136  8B 46 04				 mov ax, [bp + ARG_S2] ; ax = S2 (symbol+attrib)
-1    95
-1    96	0139  33 C9				 xor cx, cx
-1    97	013B  8B 4E 08				 mov cx, [bp + ARG_N] ;	cx = N
-1    98	013E  83 C3 02		     DrawLineL:	 add bx, 2h
-1    99	0141  26: 89 07				 mov es:[bx], ax
-1   100	0144  E2 F8				 loop DrawLineL
+1    78						 ; ================================
+1    79						 ; counting in bx address of the S1
+1    80
+1    81	0130  33 DB				 xor bx, bx
+1    82
+1    83						 ; trying to do	row*80d	in ax
+1    84	0132  8B 46 0C				 mov ax, [bp + DRLN_ARG_ROW]
+1    85	0135  B3 50				 mov bl, 80d
+1    86	0137  F6 E3				 mul bl
+1    87
+1    88	0139  8B D8				 mov bx, ax
+1    89
+1    90						 ; adding col num
+1    91	013B  8B 46 0A				 mov ax, [bp + DRLN_ARG_COL]
+1    92	013E  03 D8				 add bx, ax
+1    93
+1    94						 ; bx*=2, to get real address in videomem
+1    95	0140  D1 E3				 shl bx, 1
+1    96
+1    97						 ; ================================
+1    98						 ; S1
+1    99	0142  8B 46 06				 mov ax, word ptr [bp +	DRLN_ARG_S1] ; ax = S1 (symbol+attrib)
+1   100	0145  26: 89 07				 mov es:[bx], ax
 1   101
 1   102						 ; ================================
-1   103						 ; S3
-1   104	0146  83 C3 02				 add bx, 2h
-1   105	0149  8B 46 02				 mov ax, word ptr [bp +	ARG_S3]	; ax = S3 (symbol+attrib)
-1   106	014C  26: 89 07				 mov es:[bx], ax
-1   107
-1   108						 ; ================================
-1   109						 ; end
-1   110	014F  C3				 ret
-1   111	0150					 endp
-1   112				     ;-------------------------------------------
-1   113
-    114
-Turbo Assembler	 Version 4.1	    02/12/24 17:12:01	    Page 3
+1   103						 ; S2 (N times)
+1   104	0148  8B 46 04				 mov ax, [bp + DRLN_ARG_S2] ; ax = S2 (symbol+attrib)
+1   105
+1   106	014B  33 C9				 xor cx, cx
+1   107	014D  8B 4E 08				 mov cx, [bp + DRLN_ARG_N] ; cx	= N
+1   108	0150  83 C3 02		     DrawLineL:	 add bx, 2h
+1   109	0153  26: 89 07				 mov es:[bx], ax
+1   110	0156  E2 F8				 loop DrawLineL
+1   111
+1   112						 ; ================================
+1   113						 ; S3
+1   114	0158  83 C3 02				 add bx, 2h
+Turbo Assembler	 Version 4.1	    02/12/24 19:03:25	    Page 3
 prog.asm
 
 
 
-    115				     ;-------------------------------------------
-    116				     ; DrawFrame
-    117				     ; Description:
-    118				     ;	 Draws a frame in the videomem.	You can
-    119				     ;	 specify its interiour width and height,
-    120				     ;	 as well as which symbols will be used for
-    121				     ;	 drawing. See the scheme below (each pair
-    122				     ;	 of letters represents one symbol):
-    123				     ;
-    124				     ;	 TL HL ... HL TR _
-    125				     ;	 VL IN ... IN VL   ^
-    126				     ;	 .. .. ... .. ..   | Height (H>0)
-    127				     ;	 VL IN ... IN VL _ v
-    128				     ;	 BL HL ... HL BR
-    129				     ;	    |	    |
-    130				     ;	    <------->
-    131				     ;	   Width (W>0)
-    132				     ; Args (in	stack from bottom to top,
-    133				     ; EACH LINE MEANS A WORD -	TWO BYTES):
-    134				     ;	 1)  Row number	of the TL symbol
-    135				     ;	 2)  Col number	of the TL symbol
-    136				     ;	 3)  W
-    137				     ;	 4)  H
-    138				     ;	 5)  TL	(symbol)
-    139				     ;	 6)  TL	(attribute)
-    140				     ;	 7)  HL	(symbol)
-    141				     ;	 8)  HL	(attribute)
-    142				     ;	 10) TR	(symbol)
-    143				     ;	 11) TR	(attribute)
-    144				     ;	 12) VL	(symbol)
-    145				     ;	 13) VL	(attribute)
-    146				     ;	 14) IN	(symbol)
-    147				     ;	 15) IN	(attribute)
-    148				     ;	 15) BL	(symbol)
-    149				     ;	 16) BL	(attribute)
-    150				     ;	 17) BR	(symbol)
-    151				     ;	 18) BR	(attribute)
-    152				     ;	 19) Ret code
-    153				     ; ATTENTION:
-    154				     ;	 ES must be already set	to 0b800h!
-    155				     ;	 All args must have sensible values,
-    156				     ;	 otherwise UB. Rows and	Cols start with
-    157				     ;	 zero.
-    158				     ; DESTROYS:
-    159				     ;	 AX, BX, CX, BP
-    160				     ;-------------------------------------------
-    161	0150			     DrawFrame	 proc
-    162						 ; drawing top line
-    163						 ; TL HL ... HL	TR
-    164	0150  8B EC				 mov bp, sp
-    165
-    166	0152  FF 76 13				 push [bp+19d]	 ; row
-    167	0155  FF 76 12				 push [bp+18d]	 ; col
-    168	0158  FF 76 11				 push [bp+17d]	 ; N
-    169
-    170
-    171	015B  C3				 ret
-Turbo Assembler	 Version 4.1	    02/12/24 17:12:01	    Page 4
+1   115	015B  8B 46 02				 mov ax, word ptr [bp +	DRLN_ARG_S3] ; ax = S3 (symbol+attrib)
+1   116	015E  26: 89 07				 mov es:[bx], ax
+1   117
+1   118						 ; ================================
+1   119						 ; end
+1   120	0161  C3				 ret
+1   121	0162					 endp
+1   122				     ;-------------------------------------------
+1   123
+    124				     include DrFrame.asm
+1   125				     ;-------------------------------------------
+1   126				     ; DrawFrame
+1   127				     ; Description:
+1   128				     ;	 Draws a frame in the videomem.	You can
+1   129				     ;	 specify its interiour width and height,
+1   130				     ;	 as well as which symbols will be used for
+1   131				     ;	 drawing. See the scheme below (each pair
+1   132				     ;	 of letters represents one symbol):
+1   133				     ;
+1   134				     ;	 TL HL ... HL TR _
+1   135				     ;	 VL IN ... IN VL   ^
+1   136				     ;	 .. .. ... .. ..   | Height (H>0)
+1   137				     ;	 VL IN ... IN VL _ v
+1   138				     ;	 BL HL ... HL BR
+1   139				     ;	    |	    |
+1   140				     ;	    <------->
+1   141				     ;	   Width (W>0)
+1   142				     ; Args (in	stack from bottom to top,
+1   143				     ; EACH LINE MEANS A WORD -	TWO BYTES):
+1   144				     ;	 1)  Row number	of the TL symbol
+1   145				     ;	 2)  Col number	of the TL symbol
+1   146				     ;	 3)  W
+1   147				     ;	 4)  H
+1   148				     ;	 5)  TL	(L: attribute, H: symbol byte)
+1   149				     ;	 7)  HL	(L: attribute, H: symbol byte)
+1   150				     ;	 10) TR	(L: attribute, H: symbol byte)
+1   151				     ;	 12) VL	(L: attribute, H: symbol byte)
+1   152				     ;	 14) IN	(L: attribute, H: symbol byte)
+1   153				     ;	 15) BL	(L: attribute, H: symbol byte)
+1   154				     ;	 17) BR	(L: attribute, H: symbol byte)
+1   155				     ;	 19) Ret code
+1   156				     ; ATTENTION:
+1   157				     ;	 ES must be already set	to 0b800h!
+1   158				     ;	 All args must have sensible values,
+1   159				     ;	 otherwise UB. Rows and	Cols start with
+1   160				     ;	 zero.
+1   161				     ; DESTROYS:
+1   162				     ;	 AX, BX, CX, BP
+1   163				     ;-------------------------------------------
+1   164	0162			     DrawFrame	 proc
+1   165
+1   166	      =0016		     DRFRM_ARG_ROW     equ     16h
+1   167	      =0014		     DRFRM_ARG_COL     equ     14h
+1   168	      =0012		     DRFRM_ARG_W       equ     12h
+1   169	      =0010		     DRFRM_ARG_H       equ     10h
+1   170	      =000E		     DRFRM_ARG_TL      equ     0Eh
+1   171	      =000C		     DRFRM_ARG_HL      equ     0Ch
+Turbo Assembler	 Version 4.1	    02/12/24 19:03:25	    Page 4
 prog.asm
 
 
 
-    172	015C					 endp
-    173				     ;-------------------------------------------
-    174				     end	 Start
-Turbo Assembler	 Version 4.1	    02/12/24 17:12:01	    Page 5
+1   172	      =000A		     DRFRM_ARG_TR      equ     0Ah
+1   173	      =0008		     DRFRM_ARG_VL      equ     8h
+1   174	      =0006		     DRFRM_ARG_IN      equ     6h
+1   175	      =0004		     DRFRM_ARG_BL      equ     4h
+1   176	      =0002		     DRFRM_ARG_BR      equ     2h
+1   177
+1   178	      =0006		     DRHRL_ARGS_CNT equ	6d
+1   179
+1   180						 ; drawing top line
+1   181						 ; TL HL ... HL	TR
+1   182	0162  8B EC				 mov bp, sp
+1   183
+1   184						 ; ================================
+1   185						 ; Top line
+1   186	0164  FF 76 16				 push [bp + DRFRM_ARG_ROW]     ; row
+1   187	0167  FF 76 14				 push [bp + DRFRM_ARG_COL]     ; col
+1   188	016A  FF 76 12				 push [bp + DRFRM_ARG_W]       ; N
+1   189	016D  FF 76 0E				 push [bp + DRFRM_ARG_TL]      ; S1
+1   190	0170  FF 76 0C				 push [bp + DRFRM_ARG_HL]      ; S2
+1   191	0173  FF 76 0A				 push [bp + DRFRM_ARG_TR]      ; S3
+1   192
+1   193	0176  8B D5				 mov dx, bp
+1   194	0178  E8 FFB3				 call DrawLine
+1   195	017B  8B EA				 mov bp, dx
+1   196
+1   197						 ; ================================
+1   198						 ; Middle lines
+1   199
+1   200	017D  83 C4 06				 add sp, 3d * 2d ; clearing symbols-args
+1   201						 ; pushing new symbols as args
+1   202	0180  FF 76 08				 push [bp + DRFRM_ARG_VL]      ; S1
+1   203	0183  FF 76 06				 push [bp + DRFRM_ARG_IN]      ; S2
+1   204	0186  FF 76 08				 push [bp + DRFRM_ARG_VL]      ; S3
+1   205
+1   206						 ; loop
+1   207	0189  8B 4E 10				 mov cx, [bp + DRFRM_ARG_H]
+1   208	018C			     DRFRM_LOOP:
+1   209	018C  FE 46 16				 inc byte ptr [bp + DRFRM_ARG_ROW]
+1   210
+1   211	018F  8B D5				 mov dx, bp
+1   212	0191  E8 FF9A				 call DrawLine
+1   213	0194  8B EA				 mov bp, dx
+1   214
+1   215	0196  E2 F4				 loop DRFRM_LOOP
+1   216						 ; ================================
+1   217						 ; Bottom line
+1   218
+1   219	0198  FE 46 16				 inc byte ptr [bp + DRFRM_ARG_ROW]
+1   220
+1   221	019B  83 C4 06				 add sp, 3d * 2d ; clearing symbols-args
+1   222						 ; pushing new symbols as args
+1   223	019E  FF 76 04				 push [bp + DRFRM_ARG_BL]      ; S1
+1   224	01A1  FF 76 0C				 push [bp + DRFRM_ARG_HL]      ; S2
+1   225	01A4  FF 76 02				 push [bp + DRFRM_ARG_BR]      ; S3
+1   226
+1   227	01A7  8B D5				 mov dx, bp
+1   228	01A9  E8 FF82				 call DrawLine
+Turbo Assembler	 Version 4.1	    02/12/24 19:03:25	    Page 5
+prog.asm
+
+
+
+1   229	01AC  8B EA				 mov bp, dx
+1   230
+1   231						 ; ================================
+1   232						 ; end
+1   233	01AE  83 C4 0C				 add sp, DRHRL_ARGS_CNT	* 2d ; clearing	stack
+1   234	01B1  C3				 ret
+1   235	01B2					 endp
+1   236				     ;-------------------------------------------
+1   237
+    238
+    239				     end	 Start
+Turbo Assembler	 Version 4.1	    02/12/24 19:03:25	    Page 6
 Symbol Table
 
 
@@ -202,7 +272,7 @@ Symbol Name			  Type	 Value
 
 ??DATE				  Text	 "02/12/24"
 ??FILENAME			  Text	 "prog	  "
-??TIME				  Text	 "17:12:01"
+??TIME				  Text	 "19:03:25"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
 @CODE				  Text	 DGROUP
@@ -216,20 +286,33 @@ Symbol Name			  Type	 Value
 @MODEL				  Text	 1
 @STACK				  Text	 DGROUP
 @WORDSIZE			  Text	 2
-ARG_COL				  Number 000A
-ARG_N				  Number 0008
-ARG_ROW				  Number 000C
-ARG_S1				  Number 0006
-ARG_S2				  Number 0004
-ARG_S3				  Number 0002
-DRAWFRAME			  Near	 DGROUP:0150
-DRAWLINE			  Near	 DGROUP:011C
-DRAWLINEL			  Near	 DGROUP:013E
+DRAWFRAME			  Near	 DGROUP:0162
+DRAWLINE			  Near	 DGROUP:012E
+DRAWLINEL			  Near	 DGROUP:0150
+DRFRM_ARG_BL			  Number 0004
+DRFRM_ARG_BR			  Number 0002
+DRFRM_ARG_COL			  Number 0014
+DRFRM_ARG_H			  Number 0010
+DRFRM_ARG_HL			  Number 000C
+DRFRM_ARG_IN			  Number 0006
+DRFRM_ARG_ROW			  Number 0016
+DRFRM_ARG_TL			  Number 000E
+DRFRM_ARG_TR			  Number 000A
+DRFRM_ARG_VL			  Number 0008
+DRFRM_ARG_W			  Number 0012
+DRFRM_LOOP			  Near	 DGROUP:018C
+DRHRL_ARGS_CNT			  Number 0006
+DRLN_ARG_COL			  Number 000A
+DRLN_ARG_N			  Number 0008
+DRLN_ARG_ROW			  Number 000C
+DRLN_ARG_S1			  Number 0006
+DRLN_ARG_S2			  Number 0004
+DRLN_ARG_S3			  Number 0002
 START				  Near	 DGROUP:0100
 
 Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
   _DATA				  16  0000 Word	  Public  DATA
-  _TEXT				  16  015C Word	  Public  CODE
+  _TEXT				  16  01B2 Word	  Public  CODE
 
