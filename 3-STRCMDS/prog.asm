@@ -30,6 +30,7 @@ Start:
             call PrnW
             #
 
+            COMMENT #
             ; ==============
             ; memset test
             mov di, offset X
@@ -37,6 +38,20 @@ Start:
             mov al, 'A'
             call MemSet
 
+            ; print X
+            mov dx, offset X
+            mov ah, 09h
+            int 21h
+            #
+
+            ; ==============
+            ; memcpy???
+            mov cx, 4h
+            mov si, offset X
+            mov di, offset X + 8d
+            rep movsb
+
+            ; print X
             mov dx, offset X
             mov ah, 09h
             int 21h
@@ -46,7 +61,7 @@ Start:
             mov ax, 4c13h
             int 21h
 
-X db 'testTESTtest$'
+X db 'testTESTffff$'
 
 include prnw.asm
 
@@ -127,7 +142,7 @@ MemChrFin:  ret
 ;-------------------------------------------
 MemSet      proc
 
-            rep stosb
+            rep stosb   ; the most complicated func
 
             ret
             endp
