@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    02/13/24 21:27:09	    Page 1
+Turbo Assembler	 Version 4.1	    02/13/24 22:40:40	    Page 1
 prog.asm
 
 
@@ -12,102 +12,150 @@ prog.asm
       7	0100  1E				 push ds
       8	0101  07				 pop es
       9
-     10	0102  BF 0110r				 mov di, offset	X
-     11	0105  E8 000D				 call Strlen
-     12
-     13	0108  E8 0018				 call PrnW
-     14
-     15	010B  B8 4C13				 mov ax, 4c13h
-     16	010E  CD 21				 int 21h
-     17
-     18	0110  74 65 73 74 24	     X db 'test$'
-     19
-     20				     ;-------------------------------------------
-     21				     ; Strlen
-     22				     ; Description:
-     23				     ;	 Counts	string's len.
-     24				     ; Result:
-     25				     ;	 In AX.
-     26				     ; Assumes:
-     27				     ;	 String's address is in	ES:DI. Terminating
-     28				     ;	 symbol	is '$'.
-     29				     ; ATTENTION:
-     30				     ;	 UB if string's	len is more than a word's
-     31				     ;	 max value.
-     32				     ; DESTROYS:
-     33				     ;	 AX, CX
-     34				     ;-------------------------------------------
-     35	0115			     Strlen	 proc
-     36
-     37	      =FFFF		     STRLEN_CX_DEF_VAL equ 0FFFFh
-     38
-     39	0115  B0 24				 mov al, '$'
-     40	0117  B9 FFFF				 mov cx, STRLEN_CX_DEF_VAL
-     41	011A  F2> AE				 repne scasb
-     42
-     43	011C  B8 FFFF				 mov ax, STRLEN_CX_DEF_VAL
-     44	011F  2B C1				 sub ax, cx
-     45	0121  48				 dec ax
-     46
-     47	0122  C3				 ret
-     48	0123					 endp
-     49				     ;-------------------------------------------
-     50
-     51				     include prnw.asm
-1    52				     ;-------------------------------------------
-1    53				     ; PrnW
-1    54				     ; Description:
-1    55				     ;	 Prints	to standart output AX
-1    56				     ;	 in hex	(using int 21h (02h))
-1    57				     ; DESTROYS:
-Turbo Assembler	 Version 4.1	    02/13/24 21:27:09	    Page 2
+     10						 ; ==============
+     11						 ; strlen test
+     12						 ;mov di, offset X
+     13						 ;call Strlen
+     14						 ;call PrnW
+     15
+     16						 ; ==============
+     17						 ; memchr test
+     18	0102  BF 0118r				 mov di, offset	X
+     19	0105  B9 0002				 mov cx, 2d
+     20	0108  B0 73				 mov al, 's'
+     21	010A  E8 0052				 call MemChr
+     22
+     23						 ; print found or not
+     24						 ; and which letter is pointed by DI
+     25	010D  26: 8A 05				 mov al, es:[di]
+     26	0110  E8 000A				 call PrnW
+     27
+     28						 ; ==============
+     29						 ; end
+     30	0113  B8 4C13				 mov ax, 4c13h
+     31	0116  CD 21				 int 21h
+     32
+     33	0118  74 65 73 74 24	     X db 'test$'
+     34
+     35				     include prnw.asm
+1    36				     ;-------------------------------------------
+1    37				     ; PrnW
+1    38				     ; Description:
+1    39				     ;	 Prints	to standart output AX
+1    40				     ;	 in hex	(using int 21h (02h))
+1    41				     ; DESTROYS:
+1    42				     ;	 CX, DX
+1    43				     ;-------------------------------------------
+1    44	011D			     PrnW	 proc
+1    45
+1    46	011D  BE 0003				 mov si, 3h	     ; starting	from smallest bytes,
+1    47								     ; which are in the	rightmost character
+1    48
+1    49						 ; loop	start
+1    50	0120  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
+1    51	0123  8A D0		     PrnWL:	 mov dl, al
+1    52	0125  80 E2 0F				 and dl, 00001111b
+1    53	0128  80 FA 0A				 cmp dl, 10d
+1    54	012B  7D 05				 jge PrnWLtr
+1    55
+1    56	012D  80 C2 30				 add dl, '0' ; '0' ... '9'
+1    57	0130  EB 06				 jmp short PrnWFin
+Turbo Assembler	 Version 4.1	    02/13/24 22:40:40	    Page 2
 prog.asm
 
 
 
-1    58				     ;	 CX, DX
-1    59				     ;-------------------------------------------
-1    60	0123			     PrnW	 proc
+1    58
+1    59	0132  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
+1    60	0135  80 EA 0A				 sub dl, 0Ah
 1    61
-1    62	0123  BE 0003				 mov si, 3h	     ; starting	from smallest bytes,
-1    63								     ; which are in the	rightmost character
-1    64
-1    65						 ; loop	start
-1    66	0126  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
-1    67	0129  8A D0		     PrnWL:	 mov dl, al
-1    68	012B  80 E2 0F				 and dl, 00001111b
-1    69	012E  80 FA 0A				 cmp dl, 10d
-1    70	0131  7D 05				 jge PrnWLtr
-1    71
-1    72	0133  80 C2 30				 add dl, '0' ; '0' ... '9'
-1    73	0136  EB 06				 jmp short PrnWFin
+1    62	0138  88 94 014Cr	     PrnWFin:	 mov byte ptr [PrnWData	+ si], dl
+1    63	013C  C1 C8 04				 ror ax, 4
+1    64	013F  4E				 dec si
+1    65	0140  E2 E1				 loop PrnWL
+1    66						 ; loop	end
+1    67
+1    68						 ; printing
+1    69	0142  50				 push ax		 ; saving ax
+1    70	0143  BA 014Cr				 mov dx, offset	PRNWDATA
+1    71	0146  B4 09				 mov ah, 09h
+1    72	0148  CD 21				 int 21h
+1    73	014A  58				 pop ax			 ; ressurecting	ax
 1    74
-1    75	0138  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
-1    76	013B  80 EA 0A				 sub dl, 0Ah
-1    77
-1    78	013E  88 94 0152r	     PrnWFin:	 mov byte ptr [PrnWData	+ si], dl
-1    79	0142  C1 C8 04				 ror ax, 4
-1    80	0145  4E				 dec si
-1    81	0146  E2 E1				 loop PrnWL
-1    82						 ; loop	end
-1    83
-1    84						 ; printing
-1    85	0148  50				 push ax		 ; saving ax
-1    86	0149  BA 0152r				 mov dx, offset	PRNWDATA
-1    87	014C  B4 09				 mov ah, 09h
-1    88	014E  CD 21				 int 21h
-1    89	0150  58				 pop ax			 ; ressurecting	ax
-1    90
-1    91						 ; end
-1    92	0151  C3				 ret
-1    93	0152					 endp
-1    94
-1    95	0152  ?? ?? ?? ?? 24	     PrnWData	 db ?, ?, ?, ?,	'$'
-1    96				     ;-------------------------------------------
-1    97
-     98
-     99				     end	 Start
-Turbo Assembler	 Version 4.1	    02/13/24 21:27:09	    Page 3
+1    75						 ; end
+1    76	014B  C3				 ret
+1    77	014C					 endp
+1    78
+1    79	014C  ?? ?? ?? ?? 24	     PrnWData	 db ?, ?, ?, ?,	'$'
+1    80				     ;-------------------------------------------
+1    81
+     82
+     83				     ;-------------------------------------------
+     84				     ; Strlen
+     85				     ; Description:
+     86				     ;	 Counts	string's len.
+     87				     ; Result:
+     88				     ;	 In AX.
+     89				     ; Assumes:
+     90				     ;	 String's address is in	ES:DI. Terminating
+     91				     ;	 symbol	is '$'.
+     92				     ; ATTENTION:
+     93				     ;	 UB if string's	len is more than a word's
+     94				     ;	 max value.
+     95				     ; DESTROYS:
+     96				     ;	 AX, CX
+     97				     ;-------------------------------------------
+     98	0151			     Strlen	 proc
+     99
+    100	      =FFFF		     STRLEN_CX_DEF_VAL equ 0FFFFh
+    101
+    102	0151  B0 24				 mov al, '$'
+    103	0153  B9 FFFF				 mov cx, STRLEN_CX_DEF_VAL
+    104	0156  F2> AE				 repne scasb
+    105
+    106	0158  B8 FFFF				 mov ax, STRLEN_CX_DEF_VAL
+    107	015B  2B C1				 sub ax, cx
+    108	015D  48				 dec ax
+    109
+    110	015E  C3				 ret
+    111	015F					 endp
+    112				     ;-------------------------------------------
+    113
+    114				     ;-------------------------------------------
+Turbo Assembler	 Version 4.1	    02/13/24 22:40:40	    Page 3
+prog.asm
+
+
+
+    115				     ; MemChr
+    116				     ; Description:
+    117				     ;	 Looks through N bytes of memory, searching
+    118				     ;	 for byte with specified value.
+    119				     ; Args:
+    120				     ;	 - N in	CX.
+    121				     ;	 - First byte of memory	to look	through	is
+    122				     ;	 ES:[DI]
+    123				     ;	 - Value to search is in AL.
+    124				     ; Returns:
+    125				     ;	 If found, AH is set to	1, ES:[DI] points
+    126				     ;	 to the	found byte. If not found, AH is	set
+    127				     ;	 zero.
+    128				     ;-------------------------------------------
+    129	015F			     MemChr	 proc
+    130
+    131	015F  F2> AE				 repne scasb	     ; it stops	one byte after
+    132	0161  4F				 dec di		     ; returning to needed byte
+    133	0162  26: 38 05				 cmp es:[di], al
+    134	0165  74 04				 je short MEMCHRFND
+    135	0167  B4 00				 mov ah, 0h
+    136	0169  EB 02				 jmp short MemChrFin
+    137	016B  B4 01		     MemChrFnd:	 mov ah, 1h
+    138	016D  C3		     MemChrFin:	 ret
+    139	016E					 endp
+    140				     ;-------------------------------------------
+    141
+    142				     end	 Start
+Turbo Assembler	 Version 4.1	    02/13/24 22:40:40	    Page 4
 Symbol Table
 
 
@@ -117,7 +165,7 @@ Symbol Name			  Type	 Value
 
 ??DATE				  Text	 "02/13/24"
 ??FILENAME			  Text	 "prog	  "
-??TIME				  Text	 "21:27:09"
+??TIME				  Text	 "22:40:40"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
 @CODE				  Text	 DGROUP
@@ -131,19 +179,22 @@ Symbol Name			  Type	 Value
 @MODEL				  Text	 1
 @STACK				  Text	 DGROUP
 @WORDSIZE			  Text	 2
-PRNW				  Near	 DGROUP:0123
-PRNWDATA			  Byte	 DGROUP:0152
-PRNWFIN				  Near	 DGROUP:013E
-PRNWL				  Near	 DGROUP:0129
-PRNWLTR				  Near	 DGROUP:0138
+MEMCHR				  Near	 DGROUP:015F
+MEMCHRFIN			  Near	 DGROUP:016D
+MEMCHRFND			  Near	 DGROUP:016B
+PRNW				  Near	 DGROUP:011D
+PRNWDATA			  Byte	 DGROUP:014C
+PRNWFIN				  Near	 DGROUP:0138
+PRNWL				  Near	 DGROUP:0123
+PRNWLTR				  Near	 DGROUP:0132
 START				  Near	 DGROUP:0100
-STRLEN				  Near	 DGROUP:0115
+STRLEN				  Near	 DGROUP:0151
 STRLEN_CX_DEF_VAL		  Number FFFF
-X				  Byte	 DGROUP:0110
+X				  Byte	 DGROUP:0118
 
 Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
   _DATA				  16  0000 Word	  Public  DATA
-  _TEXT				  16  0157 Word	  Public  CODE
+  _TEXT				  16  016E Word	  Public  CODE
 

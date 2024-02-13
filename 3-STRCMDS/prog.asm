@@ -7,15 +7,32 @@ Start:
             push ds
             pop es
 
-            mov di, offset X
-            call Strlen
+            ; ==============
+            ; strlen test
+            ;mov di, offset X
+            ;call Strlen
+            ;call PrnW
 
+            ; ==============
+            ; memchr test
+            mov di, offset X
+            mov cx, 2d
+            mov al, 's'
+            call MemChr
+
+            ; print found or not
+            ; and which letter is pointed by DI
+            mov al, es:[di]
             call PrnW
 
+            ; ==============
+            ; end
             mov ax, 4c13h
             int 21h
 
 X db 'test$'
+
+include prnw.asm
 
 ;-------------------------------------------
 ; Strlen
@@ -48,6 +65,32 @@ STRLEN_CX_DEF_VAL equ 0FFFFh
             endp
 ;-------------------------------------------
 
-include prnw.asm
+;-------------------------------------------
+; MemChr
+; Description:
+;   Looks through N bytes of memory, searching
+;   for byte with specified value.
+; Args:
+;   - N in CX.
+;   - First byte of memory to look through is
+;   ES:[DI]
+;   - Value to search is in AL.
+; Returns:
+;   If found, AH is set to 1, ES:[DI] points
+;   to the found byte. If not found, AH is set
+;   zero.
+;-------------------------------------------
+MemChr      proc
+
+            repne scasb         ; it stops one byte after
+            dec di              ; returning to needed byte
+            cmp es:[di], al
+            je short MEMCHRFND
+            mov ah, 0h
+            jmp short MemChrFin
+MemChrFnd:  mov ah, 1h
+MemChrFin:  ret
+            endp
+;-------------------------------------------
 
 end         Start
