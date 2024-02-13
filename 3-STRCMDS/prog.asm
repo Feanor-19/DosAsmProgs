@@ -7,12 +7,15 @@ Start:
             push ds
             pop es
 
+            COMMENT #
             ; ==============
             ; strlen test
-            ;mov di, offset X
-            ;call Strlen
-            ;call PrnW
+            mov di, offset X
+            call Strlen
+            call PrnW
+            #
 
+            COMMENT #
             ; ==============
             ; memchr test
             mov di, offset X
@@ -20,17 +23,30 @@ Start:
             mov al, 's'
             call MemChr
 
+
             ; print found or not
             ; and which letter is pointed by DI
             mov al, es:[di]
             call PrnW
+            #
+
+            ; ==============
+            ; memset test
+            mov di, offset X
+            mov cx, 6d
+            mov al, 'A'
+            call MemSet
+
+            mov dx, offset X
+            mov ah, 09h
+            int 21h
 
             ; ==============
             ; end
             mov ax, 4c13h
             int 21h
 
-X db 'test$'
+X db 'testTESTtest$'
 
 include prnw.asm
 
@@ -79,6 +95,8 @@ STRLEN_CX_DEF_VAL equ 0FFFFh
 ;   If found, AH is set to 1, ES:[DI] points
 ;   to the found byte. If not found, AH is set
 ;   zero.
+; DESTROYS:
+;   CX, DI
 ;-------------------------------------------
 MemChr      proc
 
@@ -92,5 +110,28 @@ MemChrFnd:  mov ah, 1h
 MemChrFin:  ret
             endp
 ;-------------------------------------------
+
+
+;-------------------------------------------
+; MemSet
+; Description:
+;   Goes through N bytes of memory, setting
+;   them with specified value.
+; Args:
+;   - N in CX.
+;   - First byte of memory to go through is
+;   ES:[DI]
+;   - Value to set is in AL.
+; DESTROYS:
+;   CX, DI
+;-------------------------------------------
+MemSet      proc
+
+            rep stosb
+
+            ret
+            endp
+;-------------------------------------------
+
 
 end         Start
