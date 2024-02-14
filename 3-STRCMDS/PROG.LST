@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    02/13/24 23:55:53	    Page 1
+Turbo Assembler	 Version 4.1	    02/14/24 21:30:01	    Page 1
 prog.asm
 
 
@@ -49,175 +49,239 @@ prog.asm
      44						 int 21h
      45						 #
      46
-     47						 ; ==============
-     48						 ; memcpy???
-     49	0102  B9 0004				 mov cx, 4h
-     50	0105  BE 0119r				 mov si, offset	X
-     51	0108  BF 0121r				 mov di, offset	X + 8d
-     52	010B  F3> A4				 rep movsb
-     53
-     54						 ; print X
-     55	010D  BA 0119r				 mov dx, offset	X
-     56	0110  B4 09				 mov ah, 09h
-     57	0112  CD 21				 int 21h
-Turbo Assembler	 Version 4.1	    02/13/24 23:55:53	    Page 2
+     47						 COMMENT #
+     48						 ; ==============
+     49						 ; memcpy???
+     50
+     51						 ; preparations
+     52						 mov cx, 4h
+     53						 mov si, offset	X
+     54						 mov di, offset	X + 8d
+     55
+     56						 ; well	the func itself
+     57						 rep movsb
+Turbo Assembler	 Version 4.1	    02/14/24 21:30:01	    Page 2
 prog.asm
 
 
 
      58
-     59						 ; ==============
-     60						 ; end
-     61	0114  B8 4C13				 mov ax, 4c13h
-     62	0117  CD 21				 int 21h
-     63
-     64	0119  74 65 73 74 54 45	53+  X db 'testTESTffff$'
-     65	      54 66 66 66 66 24
-     66
-     67				     include prnw.asm
-1    68				     ;-------------------------------------------
-1    69				     ; PrnW
-1    70				     ; Description:
-1    71				     ;	 Prints	to standart output AX
-1    72				     ;	 in hex	(using int 21h (02h))
-1    73				     ; DESTROYS:
-1    74				     ;	 CX, DX
-1    75				     ;-------------------------------------------
-1    76	0126			     PrnW	 proc
-1    77
-1    78	0126  BE 0003				 mov si, 3h	     ; starting	from smallest bytes,
-1    79								     ; which are in the	rightmost character
-1    80
-1    81						 ; loop	start
-1    82	0129  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
-1    83	012C  8A D0		     PrnWL:	 mov dl, al
-1    84	012E  80 E2 0F				 and dl, 00001111b
-1    85	0131  80 FA 0A				 cmp dl, 10d
-1    86	0134  7D 05				 jge PrnWLtr
-1    87
-1    88	0136  80 C2 30				 add dl, '0' ; '0' ... '9'
-1    89	0139  EB 06				 jmp short PrnWFin
-1    90
-1    91	013B  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
-1    92	013E  80 EA 0A				 sub dl, 0Ah
-1    93
-1    94	0141  88 94 0155r	     PrnWFin:	 mov byte ptr [PrnWData	+ si], dl
-1    95	0145  C1 C8 04				 ror ax, 4
-1    96	0148  4E				 dec si
-1    97	0149  E2 E1				 loop PrnWL
-1    98						 ; loop	end
-1    99
-1   100						 ; printing
-1   101	014B  50				 push ax		 ; saving ax
-1   102	014C  BA 0155r				 mov dx, offset	PRNWDATA
-1   103	014F  B4 09				 mov ah, 09h
-1   104	0151  CD 21				 int 21h
-1   105	0153  58				 pop ax			 ; ressurecting	ax
-1   106
-1   107						 ; end
-1   108	0154  C3				 ret
-1   109	0155					 endp
-1   110
-1   111	0155  ?? ?? ?? ?? 24	     PrnWData	 db ?, ?, ?, ?,	'$'
-1   112				     ;-------------------------------------------
-1   113
-    114
-Turbo Assembler	 Version 4.1	    02/13/24 23:55:53	    Page 3
+     59						 ; print X
+     60						 mov dx, offset	X
+     61						 mov ah, 09h
+     62						 int 21h
+     63						 #
+     64
+     65
+     66						 ; ==============
+     67						 ; memcmp
+     68
+     69						 ; preparations
+     70	0102  B9 0004				 mov cx, 4d
+     71	0105  BE 0116r				 mov si, offset	X
+     72	0108  BF 011Er				 mov di, offset	X + 8
+     73
+     74	010B  E8 0070				 call MemCmp
+     75
+     76	010E  E8 0019				 call PrnW
+     77
+     78						 ; ==============
+     79						 ; end
+     80	0111  B8 4C13				 mov ax, 4c13h
+     81	0114  CD 21				 int 21h
+     82
+     83	0116  74 65 61 74 54 45	53+  X	 db 'teatTESTtesx$'
+     84	      54 74 65 73 78 24
+     85	0123  59 45 53 24	     YES db 'YES$'
+     86	0127  4E 4F 24		     NO	 db 'NO$'
+     87
+     88				     include prnw.asm
+1    89				     ;-------------------------------------------
+1    90				     ; PrnW
+1    91				     ; Description:
+1    92				     ;	 Prints	to standart output AX
+1    93				     ;	 in hex	(using int 21h (02h))
+1    94				     ; DESTROYS:
+1    95				     ;	 CX, DX
+1    96				     ;-------------------------------------------
+1    97	012A			     PrnW	 proc
+1    98
+1    99	012A  BE 0003				 mov si, 3h	     ; starting	from smallest bytes,
+1   100								     ; which are in the	rightmost character
+1   101
+1   102						 ; loop	start
+1   103	012D  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
+1   104	0130  8A D0		     PrnWL:	 mov dl, al
+1   105	0132  80 E2 0F				 and dl, 00001111b
+1   106	0135  80 FA 0A				 cmp dl, 10d
+1   107	0138  7D 05				 jge PrnWLtr
+1   108
+1   109	013A  80 C2 30				 add dl, '0' ; '0' ... '9'
+1   110	013D  EB 06				 jmp short PrnWFin
+1   111
+1   112	013F  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
+1   113	0142  80 EA 0A				 sub dl, 0Ah
+1   114
+Turbo Assembler	 Version 4.1	    02/14/24 21:30:01	    Page 3
 prog.asm
 
 
 
-    115				     ;-------------------------------------------
-    116				     ; Strlen
-    117				     ; Description:
-    118				     ;	 Counts	string's len.
-    119				     ; Result:
-    120				     ;	 In AX.
-    121				     ; Assumes:
-    122				     ;	 String's address is in	ES:DI. Terminating
-    123				     ;	 symbol	is '$'.
-    124				     ; ATTENTION:
-    125				     ;	 UB if string's	len is more than a word's
-    126				     ;	 max value.
-    127				     ; DESTROYS:
-    128				     ;	 AX, CX
-    129				     ;-------------------------------------------
-    130	015A			     Strlen	 proc
-    131
-    132	      =FFFF		     STRLEN_CX_DEF_VAL equ 0FFFFh
-    133
-    134	015A  B0 24				 mov al, '$'
-    135	015C  B9 FFFF				 mov cx, STRLEN_CX_DEF_VAL
-    136	015F  F2> AE				 repne scasb
-    137
-    138	0161  B8 FFFF				 mov ax, STRLEN_CX_DEF_VAL
-    139	0164  2B C1				 sub ax, cx
-    140	0166  48				 dec ax
-    141
-    142	0167  C3				 ret
-    143	0168					 endp
-    144				     ;-------------------------------------------
-    145
-    146				     ;-------------------------------------------
-    147				     ; MemChr
-    148				     ; Description:
-    149				     ;	 Looks through N bytes of memory, searching
-    150				     ;	 for byte with specified value.
-    151				     ; Args:
-    152				     ;	 - N in	CX.
-    153				     ;	 - First byte of memory	to look	through	is
-    154				     ;	 ES:[DI]
-    155				     ;	 - Value to search is in AL.
-    156				     ; Returns:
-    157				     ;	 If found, AH is set to	1, ES:[DI] points
-    158				     ;	 to the	found byte. If not found, AH is	set
-    159				     ;	 zero.
-    160				     ; DESTROYS:
-    161				     ;	 CX, DI
-    162				     ;-------------------------------------------
-    163	0168			     MemChr	 proc
-    164
-    165	0168  F2> AE				 repne scasb	     ; it stops	one byte after
-    166	016A  4F				 dec di		     ; returning to needed byte
-    167	016B  26: 38 05				 cmp es:[di], al
-    168	016E  74 04				 je short MEMCHRFND
-    169	0170  B4 00				 mov ah, 0h
-    170	0172  EB 02				 jmp short MemChrFin
-    171	0174  B4 01		     MemChrFnd:	 mov ah, 1h
-Turbo Assembler	 Version 4.1	    02/13/24 23:55:53	    Page 4
+1   115	0145  88 94 0159r	     PrnWFin:	 mov byte ptr [PrnWData	+ si], dl
+1   116	0149  C1 C8 04				 ror ax, 4
+1   117	014C  4E				 dec si
+1   118	014D  E2 E1				 loop PrnWL
+1   119						 ; loop	end
+1   120
+1   121						 ; printing
+1   122	014F  50				 push ax		 ; saving ax
+1   123	0150  BA 0159r				 mov dx, offset	PRNWDATA
+1   124	0153  B4 09				 mov ah, 09h
+1   125	0155  CD 21				 int 21h
+1   126	0157  58				 pop ax			 ; ressurecting	ax
+1   127
+1   128						 ; end
+1   129	0158  C3				 ret
+1   130	0159					 endp
+1   131
+1   132	0159  ?? ?? ?? ?? 24	     PrnWData	 db ?, ?, ?, ?,	'$'
+1   133				     ;-------------------------------------------
+1   134
+    135
+    136				     ;-------------------------------------------
+    137				     ; Strlen
+    138				     ; Description:
+    139				     ;	 Counts	string's len.
+    140				     ; Result:
+    141				     ;	 In AX.
+    142				     ; Assumes:
+    143				     ;	 String's address is in	ES:DI. Terminating
+    144				     ;	 symbol	is '$'.
+    145				     ; ATTENTION:
+    146				     ;	 UB if string's	len is more than a word's
+    147				     ;	 max value.
+    148				     ; DESTROYS:
+    149				     ;	 AX, CX
+    150				     ;-------------------------------------------
+    151	015E			     Strlen	 proc
+    152
+    153	      =FFFF		     STRLEN_CX_DEF_VAL equ 0FFFFh
+    154
+    155	015E  B0 24				 mov al, '$'
+    156	0160  B9 FFFF				 mov cx, STRLEN_CX_DEF_VAL
+    157	0163  F2> AE				 repne scasb
+    158
+    159	0165  B8 FFFF				 mov ax, STRLEN_CX_DEF_VAL
+    160	0168  2B C1				 sub ax, cx
+    161	016A  48				 dec ax
+    162
+    163	016B  C3				 ret
+    164	016C					 endp
+    165				     ;-------------------------------------------
+    166
+    167				     ;-------------------------------------------
+    168				     ; MemChr
+    169				     ; Description:
+    170				     ;	 Looks through N bytes of memory, searching
+    171				     ;	 for byte with specified value.
+Turbo Assembler	 Version 4.1	    02/14/24 21:30:01	    Page 4
 prog.asm
 
 
 
-    172	0176  C3		     MemChrFin:	 ret
-    173	0177					 endp
-    174				     ;-------------------------------------------
-    175
-    176
-    177				     ;-------------------------------------------
-    178				     ; MemSet
-    179				     ; Description:
-    180				     ;	 Goes through N	bytes of memory, setting
-    181				     ;	 them with specified value.
-    182				     ; Args:
-    183				     ;	 - N in	CX.
-    184				     ;	 - First byte of memory	to go through is
-    185				     ;	 ES:[DI]
-    186				     ;	 - Value to set	is in AL.
-    187				     ; DESTROYS:
-    188				     ;	 CX, DI
-    189				     ;-------------------------------------------
-    190	0177			     MemSet	 proc
-    191
-    192	0177  F3> AA				 rep stosb   ; the most	complicated func
-    193
-    194	0179  C3				 ret
-    195	017A					 endp
-    196				     ;-------------------------------------------
+    172				     ; Args:
+    173				     ;	 - N in	CX.
+    174				     ;	 - First byte of memory	to look	through	is
+    175				     ;	 ES:[DI]
+    176				     ;	 - Value to search is in AL.
+    177				     ; Returns:
+    178				     ;	 If found, AH is set to	1, ES:[DI] points
+    179				     ;	 to the	found byte. If not found, AH is	set
+    180				     ;	 zero.
+    181				     ; DESTROYS:
+    182				     ;	 CX, DI
+    183				     ;-------------------------------------------
+    184	016C			     MemChr	 proc
+    185
+    186	016C  F2> AE				 repne scasb	     ; it stops	one byte after
+    187	016E  4F				 dec di		     ; returning to needed byte
+    188	016F  26: 38 05				 cmp es:[di], al
+    189	0172  74 04				 je short MEMCHRFND
+    190	0174  B4 00				 mov ah, 0h
+    191	0176  EB 02				 jmp short MemChrFin
+    192	0178  B4 01		     MemChrFnd:	 mov ah, 1h
+    193	017A  C3		     MemChrFin:	 ret
+    194	017B					 endp
+    195				     ;-------------------------------------------
+    196
     197
-    198
-    199				     end	 Start
-Turbo Assembler	 Version 4.1	    02/13/24 23:55:53	    Page 5
+    198				     ;-------------------------------------------
+    199				     ; MemSet
+    200				     ; Description:
+    201				     ;	 Goes through N	bytes of memory, setting
+    202				     ;	 them with specified value.
+    203				     ; Args:
+    204				     ;	 - N in	CX.
+    205				     ;	 - First byte of memory	to go through is
+    206				     ;	 ES:[DI]
+    207				     ;	 - Value to set	is in AL.
+    208				     ; DESTROYS:
+    209				     ;	 CX, DI
+    210				     ;-------------------------------------------
+    211	017B			     MemSet	 proc
+    212
+    213	017B  F3> AA				 rep stosb   ; the most	complicated func
+    214
+    215	017D  C3				 ret
+    216	017E					 endp
+    217				     ;-------------------------------------------
+    218
+    219
+    220
+    221				     ;-------------------------------------------
+    222				     ; MemCmp
+    223				     ; Description:
+    224				     ;	 Compares two blocks of	bytes of size N.
+    225				     ; Args:
+    226				     ;	 - N in	CX
+    227				     ;	 - First address in DS:[SI]
+    228				     ;	 - Second address in ES:[DI]
+Turbo Assembler	 Version 4.1	    02/14/24 21:30:01	    Page 5
+prog.asm
+
+
+
+    229				     ; Result:
+    230				     ;	 - AL is set to	0 if blocks are	equal.
+    231				     ;	 - AL is set to	1 if the first different
+    232				     ;	 byte in the first block has bigger unsigned
+    233				     ;	 value than corresponding byte in the second
+    234				     ;	 block
+    235				     ;	 - AL is set to	2 if the first different
+    236				     ;	 byte in the first block has smaller unsigned
+    237				     ;	 value than corresponding byte in the second
+    238				     ;	 block
+    239				     ;-------------------------------------------
+    240	017E			     MemCmp	 proc
+    241
+    242	017E  F3> A6				 repe cmpsb ; the 'func' itself
+    243
+    244						 ; interpreting	the last result
+    245
+    246	0180  74 07				 je MemCmpZero
+    247	0182  77 0A				 ja MemCmpOne
+    248	0184  B0 02				 mov al, 2h
+    249	0186  EB 08 90				 jmp MemCmpFin
+    250	0189  B0 00		     MemCmpZero: mov al, 0h
+    251	018B  EB 03 90				 jmp MemCmpFin
+    252	018E  B0 01		     MemCmpOne:	 mov al, 1h
+    253	0190			     MemCmpFin:
+    254
+    255	0190  C3				 ret
+    256	0191					 endp
+    257				     ;-------------------------------------------
+    258				     end	 Start
+Turbo Assembler	 Version 4.1	    02/14/24 21:30:01	    Page 6
 Symbol Table
 
 
@@ -225,9 +289,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "02/13/24"
+??DATE				  Text	 "02/14/24"
 ??FILENAME			  Text	 "prog	  "
-??TIME				  Text	 "23:55:53"
+??TIME				  Text	 "21:30:01"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
 @CODE				  Text	 DGROUP
@@ -241,23 +305,29 @@ Symbol Name			  Type	 Value
 @MODEL				  Text	 1
 @STACK				  Text	 DGROUP
 @WORDSIZE			  Text	 2
-MEMCHR				  Near	 DGROUP:0168
-MEMCHRFIN			  Near	 DGROUP:0176
-MEMCHRFND			  Near	 DGROUP:0174
-MEMSET				  Near	 DGROUP:0177
-PRNW				  Near	 DGROUP:0126
-PRNWDATA			  Byte	 DGROUP:0155
-PRNWFIN				  Near	 DGROUP:0141
-PRNWL				  Near	 DGROUP:012C
-PRNWLTR				  Near	 DGROUP:013B
+MEMCHR				  Near	 DGROUP:016C
+MEMCHRFIN			  Near	 DGROUP:017A
+MEMCHRFND			  Near	 DGROUP:0178
+MEMCMP				  Near	 DGROUP:017E
+MEMCMPFIN			  Near	 DGROUP:0190
+MEMCMPONE			  Near	 DGROUP:018E
+MEMCMPZERO			  Near	 DGROUP:0189
+MEMSET				  Near	 DGROUP:017B
+NO				  Byte	 DGROUP:0127
+PRNW				  Near	 DGROUP:012A
+PRNWDATA			  Byte	 DGROUP:0159
+PRNWFIN				  Near	 DGROUP:0145
+PRNWL				  Near	 DGROUP:0130
+PRNWLTR				  Near	 DGROUP:013F
 START				  Near	 DGROUP:0100
-STRLEN				  Near	 DGROUP:015A
+STRLEN				  Near	 DGROUP:015E
 STRLEN_CX_DEF_VAL		  Number FFFF
-X				  Byte	 DGROUP:0119
+X				  Byte	 DGROUP:0116
+YES				  Byte	 DGROUP:0123
 
 Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
   _DATA				  16  0000 Word	  Public  DATA
-  _TEXT				  16  017A Word	  Public  CODE
+  _TEXT				  16  0191 Word	  Public  CODE
 

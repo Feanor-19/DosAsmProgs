@@ -44,24 +44,43 @@ Start:
             int 21h
             #
 
+            COMMENT #
             ; ==============
             ; memcpy???
+
+            ; preparations
             mov cx, 4h
             mov si, offset X
             mov di, offset X + 8d
+
+            ; well the func itself
             rep movsb
 
             ; print X
             mov dx, offset X
             mov ah, 09h
             int 21h
+            #
+
+
+            ; ==============
+            ; memcmp
+
+            ; preparations
+            mov cx, 4d
+            mov si, offset X
+            mov di, offset X + 8
+
+            call MemCmp
+
+            call PrnW
 
             ; ==============
             ; end
             mov ax, 4c13h
             int 21h
 
-X db 'testTESTffff$'
+X   db 'teatTESTtesx$'
 
 include prnw.asm
 
@@ -149,4 +168,42 @@ MemSet      proc
 ;-------------------------------------------
 
 
+
+;-------------------------------------------
+; MemCmp
+; Description:
+;   Compares two blocks of bytes of size N.
+; Args:
+;   - N in CX
+;   - First address in DS:[SI]
+;   - Second address in ES:[DI]
+; Result:
+;   - AL is set to 0 if blocks are equal.
+;   - AL is set to 1 if the first different
+;   byte in the first block has bigger unsigned
+;   value than corresponding byte in the second
+;   block
+;   - AL is set to 2 if the first different
+;   byte in the first block has smaller unsigned
+;   value than corresponding byte in the second
+;   block
+;-------------------------------------------
+MemCmp      proc
+
+            repe cmpsb ; the 'func' itself
+
+            ; interpreting the last result
+
+            je MemCmpZero
+            ja MemCmpOne
+            mov al, 2h
+            jmp MemCmpFin
+MemCmpZero: mov al, 0h
+            jmp MemCmpFin
+MemCmpOne:  mov al, 1h
+MemCmpFin:
+
+            ret
+            endp
+;-------------------------------------------
 end         Start
