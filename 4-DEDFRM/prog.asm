@@ -5,8 +5,8 @@ org 100h
 
 Start:
 
-            mov al, 60d
-            mov ah, 20d
+            mov al, 20d
+            mov ah, 8d
             mov si, offset STYLE2
             mov bx, offset Text
 

@@ -1,3 +1,11 @@
+.DrFrmNewLine   macro
+                add di, SCREEN_WIDTH * 2 ; next line:
+                xor dx, dx               ; di = di + screen_w*2-w*2
+                mov dl, al
+                add dl, al
+                sub di, dx
+                endm
+
 ; ===================================================
 ; DrawFrame
 ; Description:
@@ -106,52 +114,22 @@ DrFrmDatLoop:   mov dl, [si]
                 ; ====================================
                 ; drawing top line
 
-                movsw   ; A
-
-                ; BBB
-                xor cx, cx
-                mov cl, al ; cx = w
-                sub cx, 2h ; without boundary symbols
-DrFrmTLLoop:    movsw
-                sub si, 2h
-                loop DrFrmTLLoop
-                add si, 2h
-
-                movsw   ; C
+                call DrawHorLine
 
                 ; ====================================
                 ; drawing middle line(s)
 
-                add di, SCREEN_WIDTH * 2 ; next line:
-                xor dx, dx               ; di = di + screen_w*2-w*2
-                mov dl, al
-                add dl, al
-                sub di, dx
-
+                .DrFrmNewLine
 
                 xor cx, cx ; cx = height - 2
                 mov cl, ah
                 sub cx, 2h
-DrFrmMLOutLoop: movsw      ; D
-
+DrFrmMLOutLoop:
                 push cx ; saving outter loop cnt
 
-                ; EEE
-                xor cx, cx
-                mov cl, al ; cx = w
-                sub cx, 2h ; without boundary symbols
-DrFrmMLINLoop:  movsw
-                sub si, 2h
-                loop DrFrmMLINLoop
-                add si, 2h
+                call DrawHorLine
 
-                movsw ; F
-
-                add di, SCREEN_WIDTH * 2 ; next line:
-                xor dx, dx               ; di = di + screen_w*2-w*2
-                mov dl, al
-                add dl, al
-                sub di, dx
+                .DrFrmNewLine
 
                 sub si, 6d  ; returning back to D
 
@@ -163,18 +141,7 @@ DrFrmMLINLoop:  movsw
 
                 add si, 6d  ; setting to G
 
-                movsw ; G
-
-                ; HHH
-                xor cx, cx
-                mov cl, al ; cx = w
-                sub cx, 2h ; without boundary symbols
-DrFrmBLLoop:    movsw
-                sub si, 2h
-                loop DrFrmBLLoop
-                add si, 2h
-
-                movsw ; I
+                call DrawHorLine
 
                 ; ====================================
                 ; end
@@ -185,5 +152,40 @@ DrFrmBLLoop:    movsw
 DrFrmData       db 18 DUP(?)
 ;                  A # B # ... I #
 
+                endp
+; ===================================================
+
+; ===================================================
+; DrawHorLine
+; Description:
+;   Helping function DrawFrame. Not for using on its
+;   own.
+; Assumes:
+;   - SI points at A, D or G
+;   - Width of the line in AL
+; DESTROYS:
+;   CX
+; Outcome:
+;   - SI points at the next left bound symbol
+;   - DI points at the byte right after the last
+;   byte of the drawn line.
+;
+; ===================================================
+DrawHorLine     proc
+
+                movsw   ; Left bound symb (A, D or G)
+
+                ; Inner symb (B, E or H)
+                xor cx, cx
+                mov cl, al ; cx = w
+                sub cx, 2h ; without boundary symbols
+DrHorLineLoop:  movsw
+                sub si, 2h
+                loop DrHorLineLoop
+                add si, 2h
+
+                movsw   ; Right bound symb (C, F or I)
+
+                ret
                 endp
 ; ===================================================
