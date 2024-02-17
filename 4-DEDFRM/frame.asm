@@ -4,25 +4,12 @@
 org 100h
 
 Start:
-            COMMENT #
             mov al, 20d
             mov ah, 8d
             mov si, offset STYLE2
             mov bx, offset Text
 
             call DrawFrame
-            #
-
-
-            ; print str test
-            mov ax, 0B800h
-            mov es, ax
-            mov si, offset TestText
-            mov bl, 2d
-            mov bh, 3d
-            call PrintText
-
-
 
             ; ==============
             ; end
@@ -34,8 +21,8 @@ Style2 db 01001110b, '+-+| |+-+'
 Style3 db 01001110b, '         '
 Style4 db 01001110b, '…Õª∫ ∫»Õº'
 
-Text   db 'Header: Hello!$'
-TestText db 'First/nSeco//nd/n/nThird', 0FFh
+Text   db 'Header\n\nHello!\nSeco\\nd\n\nThird', 0FFh
+TestText db 'First\nSeco\\nd\n\nThird', 0FFh
 
 include DrFrm.asm
 include PrnText.asm

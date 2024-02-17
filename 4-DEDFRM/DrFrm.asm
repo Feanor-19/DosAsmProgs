@@ -19,7 +19,10 @@
 ;               symbols and attribute byte (see ***)
 ;   - DS:[BX]:  Address of string, containing
 ;               header and text as follows:
-;               'header: text$'. '$' means end.
+;               'header\n\ntext', with byte 0FFh in
+;               the end. '\\' in header or in text
+;               means single '\', '\n' in text means
+;               new line.
 ; ***:
 ;   Starts with the attribute byte, followed by 9
 ;   bytes with symbols, used for frame. Example:
@@ -49,16 +52,7 @@ DrawFrame       proc
 DRFRM_SCREEN_W  equ 80d
 DRFRM_SCREEN_H  equ 25d
 
-BYTE_ATTR       equ 0d
-BYTE_A          equ 1d
-BYTE_B          equ 2d
-BYTE_C          equ 3d
-BYTE_D          equ 4d
-BYTE_E          equ 5d
-BYTE_F          equ 6d
-BYTE_G          equ 7d
-BYTE_H          equ 8d
-BYTE_I          equ 9d
+DRFRM_TEXT_SEP  equ ':>>:'
 
                 ; ====================================
                 ; moving style bytes to DrFrmData
@@ -91,6 +85,9 @@ DrFrmDatLoop:   mov dl, [si]
                 sub ch, DRFRM_SCREEN_H
                 neg ch
                 shr ch, 1
+
+                ; saving for printing header and text a lot later
+                push cx
 
                 ; di = (row*screen_w + col)*2 = (ch*screen_w+cl)*2
                 ; ASSUMING DRFRM_SCREEN_W = 80
@@ -148,6 +145,18 @@ DrFrmMLOutLoop:
                 call DrawHorLine
 
                 ; ====================================
+                ; print header and text
+
+                mov si, bx
+                pop bx  ; bx = row (bh) and col (bl) of
+                        ; the first symbol in frame (A)
+
+                add bl, 2d  ; one space between borders
+                            ; and text
+
+                call PrintText
+
+                ; ====================================
                 ; end
                 ret
 
@@ -165,6 +174,8 @@ DrFrmData       db 18 DUP(?)
 ;   Helping function DrawFrame. Not for using on its
 ;   own.
 ; Assumes:
+;   - ES = 0B800h
+;   - DI points at the place for the first symbol.
 ;   - SI points at A, D or G
 ;   - Width of the line in AL
 ; DESTROYS:

@@ -3,19 +3,19 @@
 ; Description:
 ;   Prints given string of text into the videomem
 ;   according to the following rules:
-;   - '/n' is interpreted as a command to go onto a
+;   - '\n' is interpreted as a command to go onto a
 ;   new line. New line starts in the same column, as
 ;   the first symbol (see args), one row lower.
-;   - '//' is printed as a single '/'.
-;   - Single '/' followed by any symbol other than 'n'
+;   - '\\' is printed as a single '\'.
+;   - Single '\' followed by any symbol other than 'n'
 ;   is UB!
 ;   - The whole string must end with byte FFh.
 ;   - UB if length of one line exceeds screen width.
 ;   - Attribute bytes don't change.
 ; Args:
 ;   - DS:[SI] pointing at the beginning of the string.
-;   - BL - Row number of the first symbol.
-;   - BH - Col number of the first symbol.
+;   - BL - Col number of the first symbol.
+;   - BH - Row number of the first symbol.
 ; Assumes:
 ;   ES = 0b800h
 ; DESTROYS:
@@ -27,7 +27,7 @@ PrintText       proc
 
 PrnTextScreenW  equ 80d
 
-ByteCtrl        equ '/'
+ByteCtrl        equ 5Ch     ; '\'
 ByteNewLine     equ 'n'
 ByteStrEnd      equ 0FFh
 
@@ -35,16 +35,16 @@ ByteStrEnd      equ 0FFh
                 ; computing offset in the videomem
                 ; of the first symbol into DI
 
-                ; AX = row * 80d = BL * 80d
+                ; AX = row * 80d = Bh * 80d
                 xor ax, ax
-                mov al, bl
+                mov al, bh
                 mov cx, 80d
                 mul cx
 
                 mov di, ax  ; DI = row*80
 
                 xor ax, ax
-                mov al, bh  ; AX = BH
+                mov al, bl  ; AX = Bl
                 add di, ax  ; DI += col
 
                 shl di, 1      ; di*=2
