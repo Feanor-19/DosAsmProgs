@@ -187,6 +187,8 @@ MemSet      proc
 ;   byte in the first block has smaller unsigned
 ;   value than corresponding byte in the second
 ;   block
+;   - Status flags change corresponding to the
+;   last different bytes
 ;-------------------------------------------
 MemCmp      proc
 
