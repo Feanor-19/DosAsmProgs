@@ -1,9 +1,11 @@
 .DrFrmNewLine   macro
-                add di, SCREEN_WIDTH * 2 ; next line:
+                nop
+                add di, DRFRM_SCREEN_W * 2 ; next line:
                 xor dx, dx               ; di = di + screen_w*2-w*2
                 mov dl, al
                 add dl, al
                 sub di, dx
+                nop
                 endm
 
 ; ===================================================
@@ -39,11 +41,13 @@
 ; Attention:
 ;   All args must have sensible values, otherwise UB.
 ; DESTROYS:
-;
+;   CX, SI, DI, DX
+; Changes:
+;   ES = 0b800h
 ; ===================================================
 DrawFrame       proc
-SCREEN_WIDTH    equ 80d
-SCREEN_HEIGHT   equ 25d
+DRFRM_SCREEN_W  equ 80d
+DRFRM_SCREEN_H  equ 25d
 
 BYTE_ATTR       equ 0d
 BYTE_A          equ 1d
@@ -78,18 +82,18 @@ DrFrmDatLoop:   mov dl, [si]
 
                 ; cl = col = (screen_w - w) / 2
                 mov cl, al
-                sub cl, SCREEN_WIDTH
+                sub cl, DRFRM_SCREEN_W
                 neg cl
                 shr cl, 1
 
                 ; ch = row = (screen_h - h) / 2
                 mov ch, ah
-                sub ch, SCREEN_HEIGHT
+                sub ch, DRFRM_SCREEN_H
                 neg ch
                 shr ch, 1
 
                 ; di = (row*screen_w + col)*2 = (ch*screen_w+cl)*2
-                ; ASSUMING SCREEN_WIDTH = 80
+                ; ASSUMING DRFRM_SCREEN_W = 80
                 xor di, di
                 push ax ; saving
 
