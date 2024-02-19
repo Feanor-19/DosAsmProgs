@@ -1,0 +1,94 @@
+Turbo Assembler	 Version 4.1	    02/19/24 22:08:28	    Page 1
+exmpl.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     .286
+      4				     org 100h
+      5
+      6	0100			     Start:
+      7
+      8	0100  6A 00				 push 0
+      9	0102  07				 pop es
+     10	0103  BB 0024				 mov bx, 4 * 09h
+     11
+     12	0106  FA				 cli
+     13	0107  26: C7 07	011Er			 mov es:[bx], offset EventHndl
+     14	010C  0E				 push cs
+     15	010D  26: 8F 47	02			 pop es:[bx+2]
+     16	0111  FB				 sti
+     17
+     18	0112  B8 3100				 mov ax, 3100h
+     19	0115  BA 0141r				 mov dx, offset	EOP
+     20	0118  C1 EA 04				 shr dx, 4
+     21	011B  42				 inc dx
+     22	011C  CD 21				 int 21h
+     23
+     24	011E			     EventHndl	 proc
+     25
+     26	011E  50				 push ax
+     27	011F  53				 push bx
+     28	0120  06				 push es
+     29
+     30	0121  68 B800				 push 0b800h
+     31	0124  07				 pop es
+     32	0125  BB 0370				 mov bx, (80*5 + 40)*2
+     33
+     34	0128  B4 4E				 mov ah, 4eh
+     35	012A  E4 60				 in al,	60h
+     36	012C  26: 89 07				 mov es:[bx], ax
+     37
+     38	012F  E4 61				 in al,	61h
+     39	0131  0C 80				 or al,	80h
+     40	0133  E6 61				 out 61h, al
+     41	0135  24 7F				 and al, not 80h
+     42	0137  E6 61				 out 61h, al
+     43
+     44	0139  B0 20				 mov al, 20h
+     45	013B  E6 20				 out 20h, al
+     46
+     47	013D  07				 pop es
+     48	013E  5B				 pop bx
+     49	013F  58				 pop ax
+     50
+     51	0140  CF				 iret
+     52
+     53	0141					 endp
+     54	0141			     EOP:
+     55				     end	 Start
+Turbo Assembler	 Version 4.1	    02/19/24 22:08:28	    Page 2
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/19/24"
+??FILENAME			  Text	 "exmpl	  "
+??TIME				  Text	 "22:08:28"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0707H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 EXMPL
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+EOP				  Near	 DGROUP:0141
+EVENTHNDL			  Near	 DGROUP:011E
+START				  Near	 DGROUP:0100
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  0141 Word	  Public  CODE
+

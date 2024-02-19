@@ -16,7 +16,7 @@ org 100h
 ;   - Header and text, separated uding '\n\n' in the
 ;   following way:
 ;   'Header\n\ntext'
-;   '\\' in header or text means a dingle '\',
+;   '\\' in header or text means a single '\',
 ;   '\n' in text means a new line.
 ; ***:
 ;   If you want to use a custom style, type '*' and

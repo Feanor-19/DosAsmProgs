@@ -1,0 +1,95 @@
+Turbo Assembler	 Version 4.1	    02/19/24 22:06:56	    Page 1
+regfrm.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     .286
+      4				     org 100h
+      5
+      6	0100			     Start:
+      7	0100  B8 3509				 mov ax, 3509h
+      8	0103  CD 21				 int 21h
+      9
+     10	0105  89 1E 0142r			 mov NxtHndlrOfs, bx
+     11	0109  8C C3				 mov bx, es
+     12	010B  89 1E 0144r			 mov NxtHndlrSeg, bx
+     13
+     14	010F  6A 00				 push 0
+     15	0111  07				 pop es
+     16	0112  BB 0024				 mov bx, 4 * 09h
+     17
+     18	0115  FA				 cli
+     19	0116  26: C7 07	012Dr			 mov es:[bx], offset EventHndl
+     20	011B  0E				 push cs
+     21	011C  26: 8F 47	02			 pop es:[bx+2]
+     22	0120  FB				 sti
+     23
+     24	0121  B8 3100				 mov ax, 3100h
+     25	0124  BA 0146r				 mov dx, offset	EOP
+     26	0127  C1 EA 04				 shr dx, 4
+     27	012A  42				 inc dx
+     28	012B  CD 21				 int 21h
+     29
+     30	012D			     EventHndl	 proc
+     31
+     32	012D  50				 push ax
+     33	012E  53				 push bx
+     34	012F  06				 push es
+     35
+     36	0130  68 B800				 push 0b800h
+     37	0133  07				 pop es
+     38	0134  BB 0370				 mov bx, (80*5 + 40)*2
+     39
+     40	0137  B4 4E				 mov ah, 4eh
+     41	0139  E4 60				 in al,	60h
+     42	013B  26: 89 07				 mov es:[bx], ax
+     43
+     44	013E  07				 pop es
+     45	013F  5B				 pop bx
+     46	0140  58				 pop ax
+     47
+     48	0141  EA				 db 0EAh
+     49	0142  0000		     NxtHndlrOfs dw 0
+     50	0144  0000		     NxtHndlrSeg dw 0
+     51
+     52	0146					 endp
+     53	0146			     EOP:
+     54				     end	 Start
+Turbo Assembler	 Version 4.1	    02/19/24 22:06:56	    Page 2
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/19/24"
+??FILENAME			  Text	 "regfrm  "
+??TIME				  Text	 "22:06:56"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0707H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 REGFRM
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+EOP				  Near	 DGROUP:0146
+EVENTHNDL			  Near	 DGROUP:012D
+NXTHNDLROFS			  Word	 DGROUP:0142
+NXTHNDLRSEG			  Word	 DGROUP:0144
+START				  Near	 DGROUP:0100
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  0146 Word	  Public  CODE
+
