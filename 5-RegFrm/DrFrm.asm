@@ -52,8 +52,6 @@ DrawFrame       proc
 DRFRM_SCREEN_W  equ 80d
 DRFRM_SCREEN_H  equ 25d
 
-DRFRM_TEXT_SEP  equ ':>>:'
-
                 ; ====================================
                 ; moving style bytes to DrFrmData
 
@@ -206,3 +204,4 @@ DrHorLineLoop:  movsw
                 ret
                 endp
 ; ===================================================
+include PrnText.asm
