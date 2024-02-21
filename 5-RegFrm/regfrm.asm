@@ -64,6 +64,7 @@ OfsBP_l     equ BaseRegOfsL + 6 * ScreenW*2
 OfsSP_h     equ BaseRegOfsH + 7 * ScreenW*2
 OfsSP_l     equ BaseRegOfsL + 7 * ScreenW*2
 
+TEST_        db 8 DUP(0FFh)
 
 Style       db  4Eh, '…Õª∫ ∫»Õº'
 FrmText     db 'Register values:\n\nAX: '
@@ -286,6 +287,7 @@ CmnPath:    pop cx ; restoring outter loop cnt
             endp
 ; ===========================================================
 include DrFrm.asm
+include PrnWord.asm
 ; ===========================================================
 ; Everything after this line won't be saved in the
 ; interruption mode!
