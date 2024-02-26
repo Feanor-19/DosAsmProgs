@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 1
+Turbo Assembler	 Version 4.1	    02/26/24 21:06:40	    Page 1
 prog.asm
 
 
@@ -60,7 +60,7 @@ prog.asm
      55	      24
      56
      57				     ; ===========================================================
-Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 2
+Turbo Assembler	 Version 4.1	    02/26/24 21:06:40	    Page 2
 prog.asm
 
 
@@ -122,7 +122,7 @@ prog.asm
     112				     ; Result:
     113				     ;	 - AL is set to	1 if blocks are	equal. (password is right)
     114				     ;	 - AL is 0, if blocks aren't equal. (password is wrong)
-Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 3
+Turbo Assembler	 Version 4.1	    02/26/24 21:06:40	    Page 3
 prog.asm
 
 
@@ -184,7 +184,7 @@ prog.asm
     169	01CC  BA 01ABr				     mov dx, offset MsgAccessDend
     170	01CF  CD 21				     int 21h
     171
-Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 4
+Turbo Assembler	 Version 4.1	    02/26/24 21:06:40	    Page 4
 prog.asm
 
 
@@ -241,7 +241,7 @@ prog.asm
 1   221				     ;-------------------------------------------
 1   222
     223				     end	 Start
-Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 5
+Turbo Assembler	 Version 4.1	    02/26/24 21:06:40	    Page 5
 Symbol Table
 
 
@@ -251,7 +251,7 @@ Symbol Name			  Type	 Value
 
 ??DATE				  Text	 "02/26/24"
 ??FILENAME			  Text	 "prog	  "
-??TIME				  Text	 "21:05:33"
+??TIME				  Text	 "21:06:39"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
 @CODE				  Text	 DGROUP

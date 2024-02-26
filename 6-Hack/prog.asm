@@ -40,9 +40,6 @@ ProgEnd:
             mov ax, 4c13h
             int 21h
 
-; ===========================================================
-; ====================GLOBAL VARIABLES=======================
-PswdBuf     db 8 DUP(?)
 
 ; ===========================================================
 ; ====================GLOBAL CONSTANTS=======================
@@ -50,6 +47,41 @@ ChadPswdLen equ 8
 ChadPswd    db ChadPswdLen DUP('*') ; yes, the password is '*'s
 MsgAskPswd  db 'Please, enter the password: ', '$'
 
+; ===========================================================
+; ====================GLOBAL VARIABLES=======================
+PswdBuf     db 8 DUP(?)
+
+; ===========================================================
+; CheckPswd
+; Description:
+;   Checks if the password is right.
+;   (Compares two blocks of bytes of size N).
+; Args:
+;   - N in CX
+;   - First address in DS:[SI]
+;   - Second address in DS:[DI]
+; Result:
+;   - AL is set to 1 if blocks are equal. (password is right)
+;   - AL is 0, if blocks aren't equal. (password is wrong)
+; DESTROYS:
+;   SI, DI, CX
+; ===========================================================
+CheckPswd   proc
+
+            push ds
+            pop es
+
+            repe cmpsb
+
+            ; sete al is in the future :-(
+            je CheckPswd1
+            mov al, 0h
+            jmp CheckPswdF
+CheckPswd1: mov al, 1h
+CheckPswdF:
+
+            ret
+            endp
 ; ===========================================================
 ; GetPassword
 ; Description:
@@ -84,37 +116,6 @@ GetPswdL:   mov ah, 08h ; getc()
 
 GetPswdEnd:
             .NewLine
-
-            ret
-            endp
-; ===========================================================
-; CheckPswd
-; Description:
-;   Checks if the password is right.
-;   (Compares two blocks of bytes of size N).
-; Args:
-;   - N in CX
-;   - First address in DS:[SI]
-;   - Second address in DS:[DI]
-; Result:
-;   - AL is set to 1 if blocks are equal. (password is right)
-;   - AL is 0, if blocks aren't equal. (password is wrong)
-; DESTROYS:
-;   SI, DI, CX
-; ===========================================================
-CheckPswd   proc
-
-            push ds
-            pop es
-
-            repe cmpsb
-
-            ; sete al is in the future :-(
-            je CheckPswd1
-            mov al, 0h
-            jmp CheckPswdF
-CheckPswd1: mov al, 1h
-CheckPswdF:
 
             ret
             endp
