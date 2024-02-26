@@ -2,7 +2,19 @@
 .code
 .286
 org 100h
+; ===========================================================
+.NewLine    macro
 
+            mov dl, 0Ah
+            mov ah, 02h
+            int 21h      ; putc('\n')
+
+            mov dl, 0Dh
+            mov ah, 02h
+            int 21h      ; putc('\n')
+
+            endm
+; ===========================================================
 Start:
             ; ===============================================
             ; getting the password
@@ -16,10 +28,15 @@ Start:
             mov di, offset ChadPswd
             call CheckPswd
 
-            ; TEST
-            call PrnW
+            cmp al, 1
+            jne AccDenied
+            call AccessAllowed
+            jmp ProgEnd
+AccDenied:  call AccessDenied
+
             ; ===============================================
             ; end
+ProgEnd:
             mov ax, 4c13h
             int 21h
 
@@ -66,13 +83,7 @@ GetPswdL:   mov ah, 08h ; getc()
             jmp GetPswdL
 
 GetPswdEnd:
-            mov dl, 0Ah
-            mov ah, 02h
-            int 21h      ; putc('\n')
-
-            mov dl, 0Dh
-            mov ah, 02h
-            int 21h      ; putc('\n')
+            .NewLine
 
             ret
             endp
@@ -107,6 +118,40 @@ CheckPswdF:
 
             ret
             endp
+; ===========================================================
+; AccessAllowed
+; Description:
+;   Access to very important data is allowed.
+; DESTROYS:
+;   AX, DX
+; ===========================================================
+MsgAccessAlwd   db 'Access is ALLOWED! Welcome!', '$'
+AccessAllowed   proc
+
+                mov ah, 09h
+                mov dx, offset MsgAccessAlwd
+                int 21h
+
+                ret
+
+                endp
+; ===========================================================
+; AccessDenied
+; Description:
+;   Access to very important data is allowed.
+; DESTROYS:
+;   AX, DX
+; ===========================================================
+MsgAccessDend   db 'Access is DENIED! NOT Welcome!', '$'
+AccessDenied    proc
+
+                mov ah, 09h
+                mov dx, offset MsgAccessDend
+                int 21h
+
+                ret
+
+                endp
 ; ===========================================================
 include prnw.asm
 end         Start

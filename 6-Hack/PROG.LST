@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    02/26/24 20:46:04	    Page 1
+Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 1
 prog.asm
 
 
@@ -7,175 +7,241 @@ prog.asm
       2	0000			     .code
       3				     .286
       4				     org 100h
-      5
-      6	0100			     Start:
-      7						 ; ===============================================
-      8						 ; getting the password
-      9	0100  BF 011Br				 mov di, offset	PswdBuf
-     10	0103  E8 0042				 call GetPassword
+      5				     ; ===========================================================
+      6				     .NewLine	 macro
+      7
+      8						 mov dl, 0Ah
+      9						 mov ah, 02h
+     10						 int 21h      ;	putc('\n')
      11
-     12						 ; ===============================================
-     13						 ; checking the	password
-     14	0106  B9 0008 90			 mov cx, ChadPswdLen
-     15	010A  BE 011Br				 mov si, offset	PswdBuf
-     16	010D  BF 0123r				 mov di, offset	ChadPswd
-     17	0110  E8 005C				 call CheckPswd
-     18
-     19						 ; TEST
-     20	0113  E8 0067				 call PrnW
-     21						 ; ===============================================
-     22						 ; end
-     23	0116  B8 4C13				 mov ax, 4c13h
-     24	0119  CD 21				 int 21h
-     25
-     26				     ; ===========================================================
-     27				     ; ====================GLOBAL VARIABLES=======================
-     28	011B  08*(??)		     PswdBuf	 db 8 DUP(?)
-     29
-     30				     ; ===========================================================
-     31				     ; ====================GLOBAL CONSTANTS=======================
-     32	      =0008		     ChadPswdLen equ 8
-     33	0123  08*(2A)		     ChadPswd	 db ChadPswdLen	DUP('*') ; yes,	the password is	'*'s
-     34	012B  50 6C 65 61 73 65	2C+  MsgAskPswd	 db 'Please, enter the password: ', '$'
-     35	      20 65 6E 74 65 72	20+
-     36	      74 68 65 20 70 61	73+
-     37	      73 77 6F 72 64 3A	20+
-     38	      24
-     39
-     40				     ; ===========================================================
-     41				     ; GetPassword
-     42				     ; Description:
-     43				     ;	 Asks user to enter password and reads it into given buf.
-     44				     ;	 Enter means end of input.
-     45				     ; Args:
-     46				     ;	 - DS:[DI] - buffer to store entered password.
-     47				     ; Destroys:
-     48				     ;	 DI
-     49				     ; ===========================================================
-     50	0148			     GetPassword proc
-     51
-     52	0148  B4 09				 mov ah, 09h
-     53	014A  BA 012Br				 mov dx, offset	MsgAskPswd
-     54	014D  CD 21				 int 21h
-     55
-     56	014F  B2 2A				 mov dl, '*' ; to print	later
-     57
-Turbo Assembler	 Version 4.1	    02/26/24 20:46:04	    Page 2
+     12						 mov dl, 0Dh
+     13						 mov ah, 02h
+     14						 int 21h      ;	putc('\n')
+     15
+     16						 endm
+     17				     ; ===========================================================
+     18	0100			     Start:
+     19						 ; ===============================================
+     20						 ; getting the password
+     21	0100  BF 0125r				 mov di, offset	PswdBuf
+     22	0103  E8 004C				 call GetPassword
+     23
+     24						 ; ===============================================
+     25						 ; checking the	password
+     26	0106  B9 0008 90			 mov cx, ChadPswdLen
+     27	010A  BE 0125r				 mov si, offset	PswdBuf
+     28	010D  BF 012Dr				 mov di, offset	ChadPswd
+     29	0110  E8 0066				 call CheckPswd
+     30
+     31	0113  3C 01				 cmp al, 1
+     32	0115  75 06				 jne AccDenied
+     33	0117  E8 0089				 call AccessAllowed
+     34	011A  EB 04 90				 jmp ProgEnd
+     35	011D  E8 00AA		     AccDenied:	 call AccessDenied
+     36
+     37						 ; ===============================================
+     38						 ; end
+     39	0120			     ProgEnd:
+     40	0120  B8 4C13				 mov ax, 4c13h
+     41	0123  CD 21				 int 21h
+     42
+     43				     ; ===========================================================
+     44				     ; ====================GLOBAL VARIABLES=======================
+     45	0125  08*(??)		     PswdBuf	 db 8 DUP(?)
+     46
+     47				     ; ===========================================================
+     48				     ; ====================GLOBAL CONSTANTS=======================
+     49	      =0008		     ChadPswdLen equ 8
+     50	012D  08*(2A)		     ChadPswd	 db ChadPswdLen	DUP('*') ; yes,	the password is	'*'s
+     51	0135  50 6C 65 61 73 65	2C+  MsgAskPswd	 db 'Please, enter the password: ', '$'
+     52	      20 65 6E 74 65 72	20+
+     53	      74 68 65 20 70 61	73+
+     54	      73 77 6F 72 64 3A	20+
+     55	      24
+     56
+     57				     ; ===========================================================
+Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 2
 prog.asm
 
 
 
-     58	0151  B4 08		     GetPswdL:	 mov ah, 08h ; getc()
-     59	0153  CD 21				 int 21h
-     60
-     61	0155  3C 0D				 cmp al, 13d ; if 'enter'
-     62	0157  74 09				 je short GetPswdEnd
-     63
-     64	0159  88 05				 mov [DI], al
-     65	015B  47				 inc di
-     66
-     67	015C  B4 02				 mov ah, 02h
-     68	015E  CD 21				 int 21h      ;	putc('*')
-     69
-     70	0160  EB EF				 jmp GetPswdL
-     71
-     72	0162			     GetPswdEnd:
-     73	0162  B2 0A				 mov dl, 0Ah
-     74	0164  B4 02				 mov ah, 02h
-     75	0166  CD 21				 int 21h      ;	putc('\n')
-     76
-     77	0168  B2 0D				 mov dl, 0Dh
-     78	016A  B4 02				 mov ah, 02h
-     79	016C  CD 21				 int 21h      ;	putc('\n')
+     58				     ; GetPassword
+     59				     ; Description:
+     60				     ;	 Asks user to enter password and reads it into given buf.
+     61				     ;	 Enter means end of input.
+     62				     ; Args:
+     63				     ;	 - DS:[DI] - buffer to store entered password.
+     64				     ; Destroys:
+     65				     ;	 DI
+     66				     ; ===========================================================
+     67	0152			     GetPassword proc
+     68
+     69	0152  B4 09				 mov ah, 09h
+     70	0154  BA 0135r				 mov dx, offset	MsgAskPswd
+     71	0157  CD 21				 int 21h
+     72
+     73	0159  B2 2A				 mov dl, '*' ; to print	later
+     74
+     75	015B  B4 08		     GetPswdL:	 mov ah, 08h ; getc()
+     76	015D  CD 21				 int 21h
+     77
+     78	015F  3C 0D				 cmp al, 13d ; if 'enter'
+     79	0161  74 09				 je short GetPswdEnd
      80
-     81	016E  C3				 ret
-     82	016F					 endp
-     83				     ; ===========================================================
-     84				     ; CheckPswd
-     85				     ; Description:
-     86				     ;	 Checks	if the password	is right.
-     87				     ;	 (Compares two blocks of bytes of size N).
-     88				     ; Args:
-     89				     ;	 - N in	CX
-     90				     ;	 - First address in DS:[SI]
-     91				     ;	 - Second address in DS:[DI]
-     92				     ; Result:
-     93				     ;	 - AL is set to	1 if blocks are	equal. (password is right)
-     94				     ;	 - AL is 0, if blocks aren't equal. (password is wrong)
-     95				     ; DESTROYS:
-     96				     ;	 SI, DI, CX
-     97				     ; ===========================================================
-     98	016F			     CheckPswd	 proc
-     99
-    100	016F  1E				 push ds
-    101	0170  07				 pop es
-    102
-    103	0171  F3> A6				 repe cmpsb
-    104
-    105						 ; sete	al is in the future :-(
-    106	0173  74 05				 je CheckPswd1
-    107	0175  B0 00				 mov al, 0h
-    108	0177  EB 03 90				 jmp CheckPswdF
-    109	017A  B0 01		     CheckPswd1: mov al, 1h
-    110	017C			     CheckPswdF:
-    111
-    112	017C  C3				 ret
-    113	017D					 endp
-    114				     ; ===========================================================
-Turbo Assembler	 Version 4.1	    02/26/24 20:46:04	    Page 3
+     81	0163  88 05				 mov [DI], al
+     82	0165  47				 inc di
+     83
+     84	0166  B4 02				 mov ah, 02h
+     85	0168  CD 21				 int 21h      ;	putc('*')
+     86
+     87	016A  EB EF				 jmp GetPswdL
+     88
+     89	016C			     GetPswdEnd:
+     90						 .NewLine
+1    91
+1    92	016C  B2 0A				 mov dl, 0Ah
+1    93	016E  B4 02				 mov ah, 02h
+1    94	0170  CD 21				 int 21h      ;	putc('\n')
+1    95
+1    96	0172  B2 0D				 mov dl, 0Dh
+1    97	0174  B4 02				 mov ah, 02h
+1    98	0176  CD 21				 int 21h      ;	putc('\n')
+1    99
+    100
+    101	0178  C3				 ret
+    102	0179					 endp
+    103				     ; ===========================================================
+    104				     ; CheckPswd
+    105				     ; Description:
+    106				     ;	 Checks	if the password	is right.
+    107				     ;	 (Compares two blocks of bytes of size N).
+    108				     ; Args:
+    109				     ;	 - N in	CX
+    110				     ;	 - First address in DS:[SI]
+    111				     ;	 - Second address in DS:[DI]
+    112				     ; Result:
+    113				     ;	 - AL is set to	1 if blocks are	equal. (password is right)
+    114				     ;	 - AL is 0, if blocks aren't equal. (password is wrong)
+Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 3
 prog.asm
 
 
 
-    115				     include prnw.asm
-1   116				     ;-------------------------------------------
-1   117				     ; PrnW
-1   118				     ; Description:
-1   119				     ;	 Prints	to standart output AX
-1   120				     ;	 in hex	(using int 21h (02h))
-1   121				     ; DESTROYS:
-1   122				     ;	 CX, DX
-1   123				     ;-------------------------------------------
-1   124	017D			     PrnW	 proc
-1   125
-1   126	017D  BE 0003				 mov si, 3h	     ; starting	from smallest bytes,
-1   127								     ; which are in the	rightmost character
-1   128
-1   129						 ; loop	start
-1   130	0180  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
-1   131	0183  8A D0		     PrnWL:	 mov dl, al
-1   132	0185  80 E2 0F				 and dl, 00001111b
-1   133	0188  80 FA 0A				 cmp dl, 10d
-1   134	018B  7D 05				 jge PrnWLtr
-1   135
-1   136	018D  80 C2 30				 add dl, '0' ; '0' ... '9'
-1   137	0190  EB 06				 jmp short PrnWFin
-1   138
-1   139	0192  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
-1   140	0195  80 EA 0A				 sub dl, 0Ah
-1   141
-1   142	0198  88 94 01ACr	     PrnWFin:	 mov byte ptr [PrnWData	+ si], dl
-1   143	019C  C1 C8 04				 ror ax, 4
-1   144	019F  4E				 dec si
-1   145	01A0  E2 E1				 loop PrnWL
-1   146						 ; loop	end
-1   147
-1   148						 ; printing
-1   149	01A2  50				 push ax		 ; saving ax
-1   150	01A3  BA 01ACr				 mov dx, offset	PRNWDATA
-1   151	01A6  B4 09				 mov ah, 09h
-1   152	01A8  CD 21				 int 21h
-1   153	01AA  58				 pop ax			 ; ressurecting	ax
-1   154
-1   155						 ; end
-1   156	01AB  C3				 ret
-1   157	01AC					 endp
-1   158
-1   159	01AC  ?? ?? ?? ?? 24	     PrnWData	 db ?, ?, ?, ?,	'$'
-1   160				     ;-------------------------------------------
-1   161
-    162				     end	 Start
-Turbo Assembler	 Version 4.1	    02/26/24 20:46:04	    Page 4
+    115				     ; DESTROYS:
+    116				     ;	 SI, DI, CX
+    117				     ; ===========================================================
+    118	0179			     CheckPswd	 proc
+    119
+    120	0179  1E				 push ds
+    121	017A  07				 pop es
+    122
+    123	017B  F3> A6				 repe cmpsb
+    124
+    125						 ; sete	al is in the future :-(
+    126	017D  74 05				 je CheckPswd1
+    127	017F  B0 00				 mov al, 0h
+    128	0181  EB 03 90				 jmp CheckPswdF
+    129	0184  B0 01		     CheckPswd1: mov al, 1h
+    130	0186			     CheckPswdF:
+    131
+    132	0186  C3				 ret
+    133	0187					 endp
+    134				     ; ===========================================================
+    135				     ; AccessAllowed
+    136				     ; Description:
+    137				     ;	 Access	to very	important data is allowed.
+    138				     ; DESTROYS:
+    139				     ;	 AX, DX
+    140				     ; ===========================================================
+    141	0187  41 63 63 65 73 73	20+  MsgAccessAlwd   db	'Access	is ALLOWED! Welcome!', '$'
+    142	      69 73 20 41 4C 4C	4F+
+    143	      57 45 44 21 20 57	65+
+    144	      6C 63 6F 6D 65 21	24
+    145	01A3			     AccessAllowed   proc
+    146
+    147	01A3  B4 09				     mov ah, 09h
+    148	01A5  BA 0187r				     mov dx, offset MsgAccessAlwd
+    149	01A8  CD 21				     int 21h
+    150
+    151	01AA  C3				     ret
+    152
+    153	01AB					     endp
+    154				     ; ===========================================================
+    155				     ; AccessDenied
+    156				     ; Description:
+    157				     ;	 Access	to very	important data is allowed.
+    158				     ; DESTROYS:
+    159				     ;	 AX, DX
+    160				     ; ===========================================================
+    161	01AB  41 63 63 65 73 73	20+  MsgAccessDend   db	'Access	is DENIED! NOT Welcome!', '$'
+    162	      69 73 20 44 45 4E	49+
+    163	      45 44 21 20 4E 4F	54+
+    164	      20 57 65 6C 63 6F	6D+
+    165	      65 21 24
+    166	01CA			     AccessDenied    proc
+    167
+    168	01CA  B4 09				     mov ah, 09h
+    169	01CC  BA 01ABr				     mov dx, offset MsgAccessDend
+    170	01CF  CD 21				     int 21h
+    171
+Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 4
+prog.asm
+
+
+
+    172	01D1  C3				     ret
+    173
+    174	01D2					     endp
+    175				     ; ===========================================================
+    176				     include prnw.asm
+1   177				     ;-------------------------------------------
+1   178				     ; PrnW
+1   179				     ; Description:
+1   180				     ;	 Prints	to standart output AX
+1   181				     ;	 in hex	(using int 21h (02h))
+1   182				     ; DESTROYS:
+1   183				     ;	 CX, DX
+1   184				     ;-------------------------------------------
+1   185	01D2			     PrnW	 proc
+1   186
+1   187	01D2  BE 0003				 mov si, 3h	     ; starting	from smallest bytes,
+1   188								     ; which are in the	rightmost character
+1   189
+1   190						 ; loop	start
+1   191	01D5  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
+1   192	01D8  8A D0		     PrnWL:	 mov dl, al
+1   193	01DA  80 E2 0F				 and dl, 00001111b
+1   194	01DD  80 FA 0A				 cmp dl, 10d
+1   195	01E0  7D 05				 jge PrnWLtr
+1   196
+1   197	01E2  80 C2 30				 add dl, '0' ; '0' ... '9'
+1   198	01E5  EB 06				 jmp short PrnWFin
+1   199
+1   200	01E7  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
+1   201	01EA  80 EA 0A				 sub dl, 0Ah
+1   202
+1   203	01ED  88 94 0201r	     PrnWFin:	 mov byte ptr [PrnWData	+ si], dl
+1   204	01F1  C1 C8 04				 ror ax, 4
+1   205	01F4  4E				 dec si
+1   206	01F5  E2 E1				 loop PrnWL
+1   207						 ; loop	end
+1   208
+1   209						 ; printing
+1   210	01F7  50				 push ax		 ; saving ax
+1   211	01F8  BA 0201r				 mov dx, offset	PRNWDATA
+1   212	01FB  B4 09				 mov ah, 09h
+1   213	01FD  CD 21				 int 21h
+1   214	01FF  58				 pop ax			 ; ressurecting	ax
+1   215
+1   216						 ; end
+1   217	0200  C3				 ret
+1   218	0201					 endp
+1   219
+1   220	0201  ?? ?? ?? ?? 24	     PrnWData	 db ?, ?, ?, ?,	'$'
+1   221				     ;-------------------------------------------
+1   222
+    223				     end	 Start
+Turbo Assembler	 Version 4.1	    02/26/24 21:05:33	    Page 5
 Symbol Table
 
 
@@ -185,7 +251,7 @@ Symbol Name			  Type	 Value
 
 ??DATE				  Text	 "02/26/24"
 ??FILENAME			  Text	 "prog	  "
-??TIME				  Text	 "20:46:04"
+??TIME				  Text	 "21:05:33"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
 @CODE				  Text	 DGROUP
@@ -199,26 +265,36 @@ Symbol Name			  Type	 Value
 @MODEL				  Text	 1
 @STACK				  Text	 DGROUP
 @WORDSIZE			  Text	 2
-CHADPSWD			  Byte	 DGROUP:0123
+ACCDENIED			  Near	 DGROUP:011D
+ACCESSALLOWED			  Near	 DGROUP:01A3
+ACCESSDENIED			  Near	 DGROUP:01CA
+CHADPSWD			  Byte	 DGROUP:012D
 CHADPSWDLEN			  Number 0008
-CHECKPSWD			  Near	 DGROUP:016F
-CHECKPSWD1			  Near	 DGROUP:017A
-CHECKPSWDF			  Near	 DGROUP:017C
-GETPASSWORD			  Near	 DGROUP:0148
-GETPSWDEND			  Near	 DGROUP:0162
-GETPSWDL			  Near	 DGROUP:0151
-MSGASKPSWD			  Byte	 DGROUP:012B
-PRNW				  Near	 DGROUP:017D
-PRNWDATA			  Byte	 DGROUP:01AC
-PRNWFIN				  Near	 DGROUP:0198
-PRNWL				  Near	 DGROUP:0183
-PRNWLTR				  Near	 DGROUP:0192
-PSWDBUF				  Byte	 DGROUP:011B
+CHECKPSWD			  Near	 DGROUP:0179
+CHECKPSWD1			  Near	 DGROUP:0184
+CHECKPSWDF			  Near	 DGROUP:0186
+GETPASSWORD			  Near	 DGROUP:0152
+GETPSWDEND			  Near	 DGROUP:016C
+GETPSWDL			  Near	 DGROUP:015B
+MSGACCESSALWD			  Byte	 DGROUP:0187
+MSGACCESSDEND			  Byte	 DGROUP:01AB
+MSGASKPSWD			  Byte	 DGROUP:0135
+PRNW				  Near	 DGROUP:01D2
+PRNWDATA			  Byte	 DGROUP:0201
+PRNWFIN				  Near	 DGROUP:01ED
+PRNWL				  Near	 DGROUP:01D8
+PRNWLTR				  Near	 DGROUP:01E7
+PROGEND				  Near	 DGROUP:0120
+PSWDBUF				  Byte	 DGROUP:0125
 START				  Near	 DGROUP:0100
+
+Macro Name
+
+.NEWLINE
 
 Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
   _DATA				  16  0000 Word	  Public  DATA
-  _TEXT				  16  01B1 Word	  Public  CODE
+  _TEXT				  16  0206 Word	  Public  CODE
 
