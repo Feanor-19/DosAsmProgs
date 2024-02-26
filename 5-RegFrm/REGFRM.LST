@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 1
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 1
 regfrm.asm
 
 
@@ -8,791 +8,943 @@ regfrm.asm
       3				     .286
       4				     org 100h
       5				     ; ===========================================================
-      6				     ; RegFrm.asm
-      7				     ; Description:
-      8				     ;	 Residential prog. Shows a frame with current register
-      9				     ;	 values	when F1	is pressed.
-     10				     ; ===========================================================
-     11	0100			     Start:
-     12	0100  BE 01CDr				 mov si, offset	OldHndlrOfs
-     13	0103  BF 01CFr				 mov di, offset	OldHndlrSeg
-     14	0106  BA 0183r				 mov dx, offset	EventHndl
-     15
-     16
-     17	0109  B8 ABCD				 mov ax, 0ABCDh
-     18	010C  BF 011Er				 mov di, offset	TEST_
-     19	010F  E8 06AB				 call PrnW
-     20
+      6				     .PushRegs	 macro
+      7
+      8						 ;pusha	; - FALLS HERE
+      9						 ; ====== instead pusha	=====
+     10						 push ax
+     11						 push cx
+     12						 push dx
+     13						 push bx
+     14						 push sp ; well	thats kinda wrong...*
+     15						 push bp
+     16						 push si
+     17						 push di
+     18						 ; ==========================
+     19						 push es
+     20						 push ds
      21
-     22	0112  E8 06CE				 call HookEvtHnl
-     23
-     24	0115  E8 056A				 call ShowFrame
-     25	0118  E8 0588				 call HideFrame
+     22						 ; * maybe correct sp?
+     23						 ; // TODO -
+     24
+     25						 endm
      26
-     27	011B  E8 06E1				 call EndPreps
-     28
-     29				     ; ===========================================================
-     30	      =003B		     KeyToggle	 equ 3Bh ; F1 pressed
-     31
-     32	      =0050		     ScreenW	 equ 80d
-     33	      =0019		     ScreenH	 equ 25d
-     34
-     35	      =0014		     FrmWidth	 equ 20d
-     36	      =000F		     FrmHeight	 equ 15d
-     37
-     38	      =001E		     TLCol	 equ ( ScreenW - FrmWidth ) / 2	 ; Col of Top Left char
-     39	      =0005		     TLRow	 equ ( ScreenH - FrmHeight ) / 2 ; Row of Top Left char
-     40
-     41						 ; offset from 0B800h of the
-     42						 ; first byte of frame
-     43	      =035C		     FirstFrmByte equ (TLRow * ScreenW + TLCol)*2
-     44
-     45				     ; Offsets in videomem
-     46	      =04A4		     BaseRegOfsH equ ((TLRow + 2) * ScreenW + (TLCol + 4) ) * 2
-     47	      =04A6		     BaseRegOfsL equ BaseRegOfsH + 2
-     48
-     49	      =04A4		     OfsAH	 equ BaseRegOfsH + 0 * ScreenW*2
-     50	      =04A6		     OfsAL	 equ BaseRegOfsL + 0 * ScreenW*2
+     27				     ; ===========================================================
+     28				     .PopRegs	 macro
+     29
+     30						 pop ds
+     31						 pop es
+     32						 ;popa ; - FALLS HERE
+     33						 ; ======== instead popa ==============
+     34						 pop di
+     35						 pop si
+     36						 pop bp
+     37						 pop sp
+     38						 pop bx
+     39						 pop dx
+     40						 pop cx
+     41						 pop ax
+     42
+     43						 endm
+     44				     ; ===========================================================
+     45				     ; RegFrm.asm
+     46				     ; Description:
+     47				     ;	 Residential prog. Shows a frame with current register
+     48				     ;	 values	when F1	is pressed. Press F1 again to hide the frame.
+     49				     ; ===========================================================
+     50	0100			     Start:
      51
-     52	      =0544		     OfsBH	 equ BaseRegOfsH + 1 * ScreenW*2
-     53	      =0546		     OfsBL	 equ BaseRegOfsL + 1 * ScreenW*2
-     54
-     55	      =05E4		     OfsCH	 equ BaseRegOfsH + 2 * ScreenW*2
-     56	      =05E6		     OfsCL	 equ BaseRegOfsL + 2 * ScreenW*2
-     57
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 2
+     52						 ; ==================================
+     53						 ; Hooking keyboard handler
+     54	0100  BE 01C9r				 mov si, offset	OldKbdHndlrOfs
+     55	0103  BF 01CBr				 mov di, offset	OldKbdHndlrSeg
+     56	0106  B9 017Er				 mov cx, offset	KbdHndl
+     57	0109  BA 0009				 mov dx, 09h ; Keyboard	INT
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 2
 regfrm.asm
 
 
 
-     58	      =0684		     OfsDH	 equ BaseRegOfsH + 3 * ScreenW*2
-     59	      =0686		     OfsDL	 equ BaseRegOfsL + 3 * ScreenW*2
-     60
-     61	      =0724		     OfsSI_h	 equ BaseRegOfsH + 4 * ScreenW*2
-     62	      =0726		     OfsSI_l	 equ BaseRegOfsL + 4 * ScreenW*2
-     63
-     64	      =07C4		     OfsDI_h	 equ BaseRegOfsH + 5 * ScreenW*2
-     65	      =07C6		     OfsDI_l	 equ BaseRegOfsL + 5 * ScreenW*2
-     66
-     67	      =0864		     OfsBP_h	 equ BaseRegOfsH + 6 * ScreenW*2
-     68	      =0866		     OfsBP_l	 equ BaseRegOfsL + 6 * ScreenW*2
+     58	010C  E8 071E				 call HookEvtHnl
+     59
+     60						 ; ==================================
+     61						 ; Hooking timer handler
+     62	010F  BE 06C7r				 mov si, offset	OldTmrHndlrOfs
+     63	0112  BF 06C9r				 mov di, offset	OldTmrHndlrSeg
+     64	0115  B9 0687r				 mov cx, offset	TmrHndl
+     65	0118  BA 0008				 mov dx, 08h ; Timer INT
+     66	011B  E8 070F				 call HookEvtHnl
+     67
+     68	011E  E8 072B				 call EndPreps
      69
-     70	      =0904		     OfsSP_h	 equ BaseRegOfsH + 7 * ScreenW*2
-     71	      =0906		     OfsSP_l	 equ BaseRegOfsL + 7 * ScreenW*2
-     72
-     73	011E  08*(FF)		     TEST_	  db 8 DUP(0FFh)
-     74
-     75	0126  4E C9 CD BB BA 20	BA+  Style	 db  4Eh, 'ÉÍ»º	ºÈÍ¼'
-     76	      C8 CD BC
-     77	0130  52 65 67 69 73 74	65+  FrmText	 db 'Register values:\n\nAX: '
-     78	      72 20 76 61 6C 75	65+
-     79	      73 3A 5C 6E 5C 6E	41+
-     80	      58 3A 20
-     81	0148  48 4C 5C 6E 42 58	3A+		 db 'HL\nBX: '
-     82	      20
-     83	0150  48 4C 5C 6E 43 58	3A+		 db 'HL\nCX: '
-     84	      20
-     85	0158  48 4C 5C 6E 44 58	3A+		 db 'HL\nDX: '
-     86	      20
-     87	0160  48 4C 5C 6E 53 49	3A+		 db 'HL\nSI: '
-     88	      20
-     89	0168  48 4C 5C 6E 44 49	3A+		 db 'HL\nDI: '
-     90	      20
-     91	0170  48 4C 5C 6E 42 50	3A+		 db 'HL\nBP: '
-     92	      20
-     93	0178  48 4C 5C 6E 53 50	3A+		 db 'HL\nSP: '
-     94	      20
-     95	0180  48 4C FF				 db 'HL', 0FFh
-     96
-     97				     ; ===========================================================
-     98				     ; EventHndl - RESIDENTIAL FUNCTION
-     99				     ; Description:
-    100				     ;	 Keyboard interruption handler.	If pressed key is F1,
-    101				     ;	 a frame with current register values is shown.
-    102				     ;
-    103				     ; ===========================================================
-    104	0183			     EventHndl	 proc
-    105
-    106						 ; =============================
-    107						 ; chechking if	it is needed key
-    108	0183  50				 push ax
-    109	0184  E4 60				 in al,	60h
-    110	0186  3C 3B				 cmp al, KeyToggle
-    111	0188  58				 pop ax
-    112	0189  75 41				 jne WrongKey
-    113
-    114						 ; ==============================
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 3
+     70
+     71						 COMMENT #
+     72						 call ShowFrame
+     73						 mov IsFrameShwn, 1
+     74						 call TmrHndl
+     75
+     76						 mov ax, 4c13h
+     77						 int 21h
+     78						 #
+     79
+     80
+     81				     ; ===========================================================
+     82				     ; ================== GLOBAL CONSTANTS =======================
+     83	      =003B		     KeyToggle	 equ 3Bh ; F1 pressed
+     84
+     85	      =0050		     ScreenW	 equ 80d
+     86	      =0019		     ScreenH	 equ 25d
+     87
+     88	      =0014		     FrmWidth	 equ 20d
+     89	      =000F		     FrmHeight	 equ 15d
+     90
+     91	      =001E		     TLCol	 equ ( ScreenW - FrmWidth ) / 2	 ; Col of Top Left char
+     92	      =0005		     TLRow	 equ ( ScreenH - FrmHeight ) / 2 ; Row of Top Left char
+     93
+     94						 ; offset from 0B800h of the
+     95						 ; first byte of frame
+     96	      =035C		     FirstFrmByte equ (TLRow * ScreenW + TLCol)*2
+     97
+     98				     ; Offsets in videomem for registers' values from 0B800h
+     99	      =04A8		     BaseRegOfs	equ ((TLRow + 2) * ScreenW + (TLCol + 6) ) * 2
+    100
+    101	      =04A8		     OfsAX	 equ BaseRegOfs	+ 0 * ScreenW*2
+    102	      =0548		     OfsCX	 equ BaseRegOfs	+ 1 * ScreenW*2
+    103	      =05E8		     OfsDX	 equ BaseRegOfs	+ 2 * ScreenW*2
+    104	      =0688		     OfsBX	 equ BaseRegOfs	+ 3 * ScreenW*2
+    105	      =0728		     OfsSP	 equ BaseRegOfs	+ 4 * ScreenW*2
+    106	      =07C8		     OfsBP	 equ BaseRegOfs	+ 5 * ScreenW*2
+    107	      =0868		     OfsSI	 equ BaseRegOfs	+ 6 * ScreenW*2
+    108	      =0908		     OfsDI	 equ BaseRegOfs	+ 7 * ScreenW*2
+    109
+    110	0121  4E C9 CD BB BA 20	BA+  Style	 db  4Eh, 'ÉÍ»º	ºÈÍ¼'
+    111	      C8 CD BC
+    112	012B  52 65 67 69 73 74	65+  FrmText	 db 'Register values:\n\nAX: '
+    113	      72 20 76 61 6C 75	65+
+    114	      73 3A 5C 6E 5C 6E	41+
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 3
 regfrm.asm
 
 
 
-    115						 ; Right key
-    116
-    117						 ; saving regs
-    118						 ;pusha	; - FALLS HERE
-    119						 ; ====== instead pusha	=====
-    120	018B  50				 push ax
-    121	018C  53				 push bx
-    122	018D  51				 push cx
-    123	018E  52				 push dx
-    124	018F  54				 push sp
-    125	0190  55				 push bp
-    126	0191  56				 push si
-    127	0192  57				 push di
-    128						 ; ==========================
-    129	0193  06				 push es
-    130	0194  1E				 push ds
+    115	      58 3A 20
+    116	0143  48 4C 5C 6E 43 58	3A+		 db 'HL\nCX: '
+    117	      20
+    118	014B  48 4C 5C 6E 44 58	3A+		 db 'HL\nDX: '
+    119	      20
+    120	0153  48 4C 5C 6E 42 58	3A+		 db 'HL\nBX: '
+    121	      20
+    122	015B  48 4C 5C 6E 53 50	3A+		 db 'HL\nSP: '
+    123	      20
+    124	0163  48 4C 5C 6E 42 50	3A+		 db 'HL\nBP: '
+    125	      20
+    126	016B  48 4C 5C 6E 53 49	3A+		 db 'HL\nSI: '
+    127	      20
+    128	0173  48 4C 5C 6E 44 49	3A+		 db 'HL\nDI: '
+    129	      20
+    130	017B  48 4C FF				 db 'HL', 0FFh
     131
-    132						 ; ============================
-    133						 ; ds =	cs, because ds is wrong
-    134	0195  0E				 push cs
-    135	0196  1F				 pop ds
-    136
-    137						 ; ============================
-    138	0197  80 3E 01D1r 00			 cmp [ISFRAMESHWN], 0h
-    139	019C  74 0C				 je JShowFrame
+    132				     ; ===========================================================
+    133				     ; KbdHndl - RESIDENTIAL FUNCTION
+    134				     ; Description:
+    135				     ;	 Keyboard interruption handler.	If pressed key is F1,
+    136				     ;	 a frame with current register values is shown/hidden.
+    137				     ;
+    138				     ; ===========================================================
+    139	017E			     KbdHndl	 proc
     140
-    141						 ; =====================================
-    142						 ; disable frame
-    143	019E  C6 06 01D1r 00 90			 mov [IsFrameShwn], 0
-    144
-    145	01A4  E8 04FC				 call HideFrame
-    146
-    147	01A7  EB 0A 90				 jmp EvntHndlEnd
-    148						 ; =====================================
-    149						 ; show	frame
-    150	01AA  C6 06 01D1r 01 90	     JShowFrame: mov [IsFrameShwn], 1
-    151	01B0  E8 04CF				 call ShowFrame
-    152	01B3			     EvntHndlEnd:
-    153
-    154						 ; ====================================
-    155						 ; Confirm geting scan code on our own
-    156						 ; and ret to main prog
-    157
-    158						 ; Blinking for	keyboard controller
-    159	01B3  E4 61				 in al,	61h
-    160	01B5  0C 80				 or al,	80h
-    161	01B7  E6 61				 out 61h, al
-    162	01B9  24 7F				 and al, not 80h
-    163	01BB  E6 61				 out 61h, al
-    164
-    165						 ; send	EOI to INT Cntrl
-    166	01BD  B0 20				 mov al, 20h
-    167	01BF  E6 20				 out 20h, al
-    168
-    169						 ; =====================================
-    170						 ; restoring regs
-    171	01C1  1F				 pop ds
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 4
+    141						 ; =============================
+    142						 ; chechking if	it is needed key
+    143	017E  50				 push ax
+    144	017F  E4 60				 in al,	60h
+    145	0181  3C 3B				 cmp al, KeyToggle
+    146	0183  58				 pop ax
+    147	0184  75 42				 jne WrongKey
+    148
+    149						 ; ==============================
+    150						 ; Right key
+    151
+    152						 ; saving regs
+    153						 .PushRegs
+1   154
+1   155						 ;pusha	; - FALLS HERE
+1   156						 ; ====== instead pusha	=====
+1   157	0186  50				 push ax
+1   158	0187  51				 push cx
+1   159	0188  52				 push dx
+1   160	0189  53				 push bx
+1   161	018A  54				 push sp ; well	thats kinda wrong...*
+1   162	018B  55				 push bp
+1   163	018C  56				 push si
+1   164	018D  57				 push di
+1   165						 ; ==========================
+1   166	018E  06				 push es
+1   167	018F  1E				 push ds
+1   168
+1   169						 ; * maybe correct sp?
+1   170						 ; // TODO -
+1   171
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 4
 regfrm.asm
 
 
 
-    172	01C2  07				 pop es
-    173						 ;popa ; - FALLS HERE
-    174						 ; ======== instead popa ==============
-    175	01C3  5F				 pop di
-    176	01C4  5E				 pop si
-    177	01C5  5D				 pop bp
-    178	01C6  5C				 pop sp
-    179	01C7  5A				 pop dx
-    180	01C8  59				 pop cx
-    181	01C9  5B				 pop bx
-    182	01CA  58				 pop ax
-    183						 ; ====================================
-    184	01CB  CF				 iret
+    172
+    173						 ; ============================
+    174						 ; ds =	cs, because ds is wrong
+    175	0190  0E				 push cs
+    176	0191  1F				 pop ds
+    177
+    178						 ; ============================
+    179	0192  2E: 80 3E	01CDr 00		 cmp cs:[ISFRAMESHWN], 0h
+    180	0198  74 0C				 je JShowFrame
+    181
+    182						 ; =====================================
+    183						 ; disable frame
+    184	019A  C6 06 01CDr 00 90			 mov IsFrameShwn, 0
     185
-    186						 ; ====================================
-    187	01CC  EA		     WrongKey:	 db 0EAh     ; jmp to old handler
-    188	01CD  0000		     OldHndlrOfs dw 0	     ; offset
-    189	01CF  0000		     OldHndlrSeg dw 0	     ; segment
-    190
-    191	01D1					 endp
-    192				     ; ===========================================================
-    193	01D1  00		     IsFrameShwn db 0	     ; 0 if frame isn't	shown, 1 otherwise
-    194				     ; Buf for the old screen state.
-    195	01D2  04B0*(??)		     ScreenBuf	 db (FrmWidth*2)*(FrmHeight*2) DUP(?)
-    196	      =04B0		     BufSize	 equ $ - ScreenBuf
-    197				     ; ===========================================================
-    198				     ;
-    199				     ; ===========================================================
-    200
-    201				     ; ===========================================================
-    202				     ; ShowFrame
-    203				     ; Description:
-    204				     ;	 Is called by EventHndl	to show	frame.
-    205				     ; DESTROYS:
-    206				     ;	 AL, AH, SI, BX, CX, ES
-    207				     ; ===========================================================
-    208	0682			     ShowFrame	 proc
+    186	01A0  E8 0549				 call HideFrame
+    187
+    188	01A3  EB 0A 90				 jmp EvntHndlEnd
+    189						 ; =====================================
+    190						 ; show	frame
+    191	01A6  C6 06 01CDr 01 90	     JShowFrame: mov IsFrameShwn, 1
+    192	01AC  E8 051C				 call ShowFrame
+    193	01AF			     EvntHndlEnd:
+    194
+    195						 ; ====================================
+    196						 ; Confirm geting scan code on our own
+    197						 ; and ret to main prog
+    198
+    199						 ; Blinking for	keyboard controller
+    200	01AF  E4 61				 in al,	61h
+    201	01B1  0C 80				 or al,	80h
+    202	01B3  E6 61				 out 61h, al
+    203	01B5  24 7F				 and al, not 80h
+    204	01B7  E6 61				 out 61h, al
+    205
+    206						 ; send	EOI to INT Cntrl
+    207	01B9  B0 20				 mov al, 20h
+    208	01BB  E6 20				 out 20h, al
     209
-    210						 ; ===============================================
-    211						 ; SAVING PREV SCREEN STATE INTO BUF
-    212	0682  1E				 push ds ; saving
-    213
-    214						 ; adjusting to	use movsw
-    215						 ; destination
-    216	0683  1E				 push ds
-    217	0684  07				 pop es
-    218	0685  BF 01D2r				 mov di, offset	ScreenBuf
-    219
-    220						 ; source
-    221	0688  68 B800				 push 0B800h
-    222	068B  1F				 pop ds
-    223	068C  BE 035C				 mov si, FirstFrmByte
-    224
-    225						 ; saving prev screen state into buf
-    226	068F  B2 00				 mov dl, 0h
-    227	0691  E8 0020				 call MovBuf
-    228
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 5
+    210						 ; =====================================
+    211						 ; restoring regs
+    212						 .PopRegs
+1   213
+1   214	01BD  1F				 pop ds
+1   215	01BE  07				 pop es
+1   216						 ;popa ; - FALLS HERE
+1   217						 ; ======== instead popa ==============
+1   218	01BF  5F				 pop di
+1   219	01C0  5E				 pop si
+1   220	01C1  5D				 pop bp
+1   221	01C2  5C				 pop sp
+1   222	01C3  5B				 pop bx
+1   223	01C4  5A				 pop dx
+1   224	01C5  59				 pop cx
+1   225	01C6  58				 pop ax
+1   226
+    227						 ; ====================================
+    228	01C7  CF				 iret
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 5
 regfrm.asm
 
 
 
-    229	0694  1F				 pop ds	; restoring ds
-    230
-    231						 ; =============================================
-    232						 ; drawing frame
-    233	0695  B0 14				 mov al, FrmWidth
-    234	0697  B4 0F				 mov ah, FrmHeight
-    235	0699  BE 0126r				 mov si, offset	Style
-    236	069C  BB 0130r				 mov bx, offset	FrmText
-    237	069F  E8 0035				 call DrawFrame
+    229
+    230						 ; ====================================
+    231	01C8  EA		     WrongKey:	     db	0EAh	 ; jmp to old keyboard handler
+    232	01C9  0000		     OldKbdHndlrOfs  dw	0	 ; offset
+    233	01CB  0000		     OldKbdHndlrSeg  dw	0	 ; segment
+    234
+    235	01CD					 endp
+    236				     ; ===========================================================
+    237				     ; =================== GLOBAL VARIABLES ======================
     238
-    239	06A2  C3				 ret
-    240	06A3					 endp
-    241				     ; ===========================================================
-    242				     ; HideFrame
-    243				     ; Description:
-    244				     ;	 Is called by EventHndl	to disable frame.
-    245				     ; DESTROYS:
-    246				     ;	 AX, ES, DI, SI, CX
-    247				     ; ===========================================================
-    248	06A3			     HideFrame	 proc
-    249
-    250						 ; ===============================================
-    251						 ; moving bytes	from screenbuf into videomem
-    252
-    253						 ; adjusting to	use movsw
-    254						 ; destination
-    255	06A3  B8 B800				 mov ax, 0B800h
-    256	06A6  8E C0				 mov es, ax
-    257	06A8  BF 035C				 mov di, offset	FirstFrmByte
-    258
-    259						 ; source
-    260						 ; ds is ds
-    261	06AB  BE 01D2r				 mov si, offset	ScreenBuf
-    262
-    263	06AE  B2 01				 mov dl, 1h
-    264	06B0  E8 0001				 call MovBuf
+    239	01CD  00		     IsFrameShwn db 0	     ; 0 if frame isn't	shown, 1 otherwise
+    240				     ; Buf for the old screen state.
+    241	01CE  04B0*(??)		     ScreenBuf	 db (FrmWidth*2)*(FrmHeight*2) DUP(?)
+    242	      =04B0		     BufSize	 equ $ - ScreenBuf
+    243
+    244				     ; ===========================================================
+    245
+    246				     ; ===========================================================
+    247				     ; TmrHndl
+    248				     ; Description:
+    249				     ;	 Timer interruption handler. If	the frame is currently
+    250				     ;	 shown ( IsFrameShwn ==	1 ), types in current registers'
+    251				     ;	 values.
+    252				     ; ===========================================================
+    253	067E  4D 4D 45 45 4F 4F	57+  MeowStr	 db 'MMEEOOWW',	'$'
+    254	      57 24
+    255
+    256	0687			     TmrHndl	 proc
+    257
+    258	      =00A0		     OfsRegDiff	 equ ScreenW * 2
+    259
+    260						 ; Ž—…Œ“ … €Ž’€…’ cmp [ISFRAMESHWN], 1h ??
+    261	0687  2E: 80 3E	01CDr 00		 cmp cs:[ISFRAMESHWN], 0h
+    262	068D  74 37				 je TmrHndlEnd
+    263
+    264						 ; frame is shown, time	to type	regs' values
     265
-    266	06B3  C3				 ret
-    267	06B4					 endp
-    268				     ; ===========================================================
-    269				     ; MovBuf
-    270				     ; Description:
-    271				     ;	 A small helping function to mov prev part of the screen
-    272				     ;	 into buf or the other way round. It moves only	part of	the
-    273				     ;	 screen, hidden	by the frame.
-    274				     ; Assumes:
-    275				     ;	 - ES:[DI] first byte of destination
-    276				     ;	 - DS:[SI] first byte of source
-    277				     ;	 - If DL = 0, bytes from videomem move to buffer,
-    278				     ;	 if DL = 1, bytes from buffer are moved	to videomem.
-    279				     ; DESTROYS:
-    280				     ;	 SI, DI, CX
-    281				     ; ===========================================================
-    282	06B4			     MovBuf	 proc
-    283
-    284	06B4  B9 000F				 mov cx, FrmHeight
-    285
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 6
+    266						 ; saving regs
+    267						 .PushRegs
+1   268
+1   269						 ;pusha	; - FALLS HERE
+1   270						 ; ====== instead pusha	=====
+1   271	068F  50				 push ax
+1   272	0690  51				 push cx
+1   273	0691  52				 push dx
+1   274	0692  53				 push bx
+1   275	0693  54				 push sp ; well	thats kinda wrong...*
+1   276	0694  55				 push bp
+1   277	0695  56				 push si
+1   278	0696  57				 push di
+1   279						 ; ==========================
+1   280	0697  06				 push es
+1   281	0698  1E				 push ds
+1   282
+1   283						 ; * maybe correct sp?
+1   284						 ; // TODO -
+1   285
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 6
 regfrm.asm
 
 
 
-    286	06B7  51		     ShFrmOutL:	 push cx ; saving outter loop cnt
-    287						 ; inner loop
-    288	06B8  B9 0014				 mov cx, FrmWidth
-    289	06BB  F3> A5				 rep movsw
-    290
-    291	06BD  80 FA 00				 cmp dl, 0h
-    292	06C0  74 0A				 je VidToBuf
-    293						 ; BufToVid
-    294	06C2  83 EF 28				 sub di, FrmWidth*2 ; ret back to line start
-    295	06C5  81 C7 00A0			 add di, ScreenW*2  ; next line
-    296	06C9  EB 08 90				 jmp CmnPath
-    297	06CC  83 EE 28		     VidToBuf:	 sub si, FrmWidth*2 ; ret back to line start
-    298	06CF  81 C6 00A0			 add si, ScreenW*2  ; next line
-    299
-    300	06D3  59		     CmnPath:	 pop cx	; restoring outter loop	cnt
-    301	06D4  E2 E1				 loop ShFrmOutL
+    286
+    287						 ; ====================================
+    288
+    289	0699  B8 B800				 mov ax, 0B800h
+    290	069C  8E C0				 mov es, ax
+    291
+    292	069E  BF 04A8				 mov di, OfsAX
+    293	06A1  8B EC				 mov bp, sp
+    294	06A3  83 C5 12				 add bp, 2 * 9d	; moving bp to point at	stored AX
+    295
+    296	06A6  B9 0008				 mov cx, 8d  ; number of regs to print
+    297	06A9  8B 46 00		     TmrHndlL:	 mov ax, [bp]
+    298
+    299	06AC  8B D9				 mov bx, cx ; saving cx
+    300	06AE  E8 0155				 call PrnW
+    301	06B1  8B CB				 mov cx, bx ; restoring	cx
     302
-    303	06D6  C3				 ret
-    304	06D7					 endp
-    305				     ; ===========================================================
-    306				     include DrFrm.asm
-1   307				     .DrFrmNewLine   macro
-1   308						     nop
-1   309						     add di, DRFRM_SCREEN_W * 2	; next line:
-1   310						     xor dx, dx		      ;	di = di	+ screen_w*2-w*2
-1   311						     mov dl, al
-1   312						     add dl, al
-1   313						     sub di, dx
-1   314						     nop
-1   315						     endm
-1   316
-1   317				     ; ===================================================
-1   318				     ; DrawFrame
-1   319				     ; Description:
-1   320				     ;	 Draws a frame in videomem.
-1   321				     ; Args:
-1   322				     ;	 - AL:	     Width
-1   323				     ;	 - AH:	     Height
-1   324				     ;	 - DS:[SI]:  Address of	string,	containing frame
-1   325				     ;		     symbols and attribute byte	(see ***)
-1   326				     ;	 - DS:[BX]:  Address of	string,	containing
-1   327				     ;		     header and	text as	follows:
-1   328				     ;		     'header\n\ntext', with byte 0FFh in
-1   329				     ;		     the end. '\\' in header or	in text
-1   330				     ;		     means single '\', '\n' in text means
-1   331				     ;		     new line.
-1   332				     ; ***:
-1   333				     ;	 Starts	with the attribute byte, followed by 9
-1   334				     ;	 bytes with symbols, used for frame. Example:
-1   335				     ;
-1   336				     ;	 Bytes:
-1   337				     ;	 41h 42h 43h 44h 45h 46h 47h 48h 49h
-1   338				     ;	 Corresponding symbols:
-1   339				     ;	 A   B	 C   D	 E   F	 G   H	 I
-1   340				     ;
-1   341				     ;	 Frame will be drawn in	the following way:
-1   342				     ;
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 7
+    303	06B3  83 ED 02				 sub bp, 2d	; reduce by word size
+    304	06B6  81 C7 00A0			 add di, OfsRegDiff
+    305	06BA  E2 ED				 loop TmrHndlL
+    306
+    307						 ; =====================================
+    308						 ; restoring regs
+    309						 .PopRegs
+1   310
+1   311	06BC  1F				 pop ds
+1   312	06BD  07				 pop es
+1   313						 ;popa ; - FALLS HERE
+1   314						 ; ======== instead popa ==============
+1   315	06BE  5F				 pop di
+1   316	06BF  5E				 pop si
+1   317	06C0  5D				 pop bp
+1   318	06C1  5C				 pop sp
+1   319	06C2  5B				 pop bx
+1   320	06C3  5A				 pop dx
+1   321	06C4  59				 pop cx
+1   322	06C5  58				 pop ax
+1   323
+    324
+    325						 ; ====================================
+    326						 ; end
+    327	06C6  EA		     TmrHndlEnd:     db	0EAh	 ; jmp to old timer handler
+    328	06C7  0000		     OldTmrHndlrOfs  dw	0	 ; offset
+    329	06C9  0000		     OldTmrHndlrSeg  dw	0	 ; segment
+    330
+    331	06CB					 endp
+    332				     ; ===========================================================
+    333
+    334				     ; ===========================================================
+    335				     ; ShowFrame
+    336				     ; Description:
+    337				     ;	 Is called by EventHndl	to show	frame.
+    338				     ; DESTROYS:
+    339				     ;	 AL, AH, SI, BX, CX, ES
+    340				     ; ===========================================================
+    341	06CB			     ShowFrame	 proc
+    342
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 7
 regfrm.asm
 
 
 
-1   343				     ;	 AB......BC
-1   344				     ;	 DE......EF
-1   345				     ;	 ..........
-1   346				     ;	 DE......EF
-1   347				     ;	 GH......HI
-1   348				     ;
-1   349				     ;	 So, this string must contain 10 bytes.
-1   350				     ; Attention:
-1   351				     ;	 All args must have sensible values, otherwise UB.
-1   352				     ; DESTROYS:
-1   353				     ;	 CX, SI, DI, DX
-1   354				     ; Changes:
-1   355				     ;	 ES = 0b800h
-1   356				     ; ===================================================
-1   357	06D7			     DrawFrame	     proc
-1   358	      =0050		     DRFRM_SCREEN_W  equ 80d
-1   359	      =0019		     DRFRM_SCREEN_H  equ 25d
-1   360
-1   361						     ; ====================================
-1   362						     ; moving style bytes to DrFrmData
-1   363
-1   364	06D7  BF 075Dr				     mov di, offset DRFRMDATA
-1   365	06DA  8A 34				     mov dh, [si] ; dh = attribute byte
-1   366	06DC  46				     inc si ; [si] -> byte_A
-1   367
-1   368	06DD  B9 0009				     mov cx, 9d
-1   369						     ;xchg ax, dx
-1   370	06E0  8A 14		     DrFrmDatLoop:   mov dl, [si]
-1   371	06E2  88 15				     mov [di], dl
-1   372	06E4  88 75 01				     mov [di + 1], dh
-1   373	06E7  46				     inc si
-1   374	06E8  83 C7 02				     add di, 2d
-1   375	06EB  E2 F3				     loop DrFrmDatLoop
-1   376
-1   377	06ED  BE 075Dr				     mov si, offset DRFRMDATA
-1   378
-1   379						     ; ====================================
-1   380						     ; computing into DI address of the	A
-1   381
-1   382						     ; cl = col	= (screen_w - w) / 2
-1   383	06F0  8A C8				     mov cl, al
-1   384	06F2  80 E9 50				     sub cl, DRFRM_SCREEN_W
-1   385	06F5  F6 D9				     neg cl
-1   386	06F7  D0 E9				     shr cl, 1
-1   387
-1   388						     ; ch = row	= (screen_h - h) / 2
-1   389	06F9  8A EC				     mov ch, ah
-1   390	06FB  80 ED 19				     sub ch, DRFRM_SCREEN_H
-1   391	06FE  F6 DD				     neg ch
-1   392	0700  D0 ED				     shr ch, 1
-1   393
-1   394						     ; saving for printing header and text a lot later
-1   395	0702  51				     push cx
-1   396
-1   397						     ; di = (row*screen_w + col)*2 = (ch*screen_w+cl)*2
-1   398						     ; ASSUMING	DRFRM_SCREEN_W = 80
-1   399	0703  33 FF				     xor di, di
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 8
+    343						 ; ===============================================
+    344						 ; SAVING PREV SCREEN STATE INTO BUF
+    345	06CB  1E				 push ds ; saving
+    346
+    347						 ; adjusting to	use movsw
+    348						 ; destination
+    349	06CC  1E				 push ds
+    350	06CD  07				 pop es
+    351	06CE  BF 01CEr				 mov di, offset	ScreenBuf
+    352
+    353						 ; source
+    354	06D1  68 B800				 push 0B800h
+    355	06D4  1F				 pop ds
+    356	06D5  BE 035C				 mov si, FirstFrmByte
+    357
+    358						 ; saving prev screen state into buf
+    359	06D8  B2 00				 mov dl, 0h
+    360	06DA  E8 0020				 call MovBuf
+    361
+    362	06DD  1F				 pop ds	; restoring ds
+    363
+    364						 ; =============================================
+    365						 ; drawing frame
+    366	06DE  B0 14				 mov al, FrmWidth
+    367	06E0  B4 0F				 mov ah, FrmHeight
+    368	06E2  BE 0121r				 mov si, offset	Style
+    369	06E5  BB 012Br				 mov bx, offset	FrmText
+    370	06E8  E8 0035				 call DrawFrame
+    371
+    372	06EB  C3				 ret
+    373	06EC					 endp
+    374				     ; ===========================================================
+    375				     ; HideFrame
+    376				     ; Description:
+    377				     ;	 Is called by EventHndl	to disable frame.
+    378				     ; DESTROYS:
+    379				     ;	 AX, ES, DI, SI, CX
+    380				     ; ===========================================================
+    381	06EC			     HideFrame	 proc
+    382
+    383						 ; ===============================================
+    384						 ; moving bytes	from screenbuf into videomem
+    385
+    386						 ; adjusting to	use movsw
+    387						 ; destination
+    388	06EC  B8 B800				 mov ax, 0B800h
+    389	06EF  8E C0				 mov es, ax
+    390	06F1  BF 035C				 mov di, offset	FirstFrmByte
+    391
+    392						 ; source
+    393						 ; ds is ds
+    394	06F4  BE 01CEr				 mov si, offset	ScreenBuf
+    395
+    396	06F7  B2 01				 mov dl, 1h
+    397	06F9  E8 0001				 call MovBuf
+    398
+    399	06FC  C3				 ret
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 8
 regfrm.asm
 
 
 
-1   400	0705  50				     push ax ; saving
-1   401
-1   402	0706  33 C0				     xor ax, ax
-1   403	0708  8A C5				     mov al, ch
-1   404	070A  BA 0050				     mov dx, 80d
-1   405	070D  F6 E2				     mul dl
-1   406
-1   407	070F  03 F8				     add di, ax
-1   408
-1   409	0711  8A D1				     mov dl, cl
-1   410	0713  03 FA				     add di, dx
-1   411
-1   412	0715  D1 E7				     shl di, 1
-1   413
-1   414						     ; while ax	is free...
-1   415	0717  B8 B800				     mov ax, 0B800h
-1   416	071A  8E C0				     mov es, ax
-1   417
-1   418	071C  58				     pop ax
-1   419
-1   420						     ; ====================================
-1   421						     ; drawing top line
-1   422
-1   423	071D  E8 004F				     call DrawHorLine
-1   424
-1   425						     ; ====================================
-1   426						     ; drawing middle line(s)
-1   427
-1   428						     .DrFrmNewLine
-2   429	0720  90				     nop
-2   430	0721  81 C7 00A0			     add di, DRFRM_SCREEN_W * 2	; next line:
-2   431	0725  33 D2				     xor dx, dx		      ;	di = di	+ screen_w*2-w*2
-2   432	0727  8A D0				     mov dl, al
-2   433	0729  02 D0				     add dl, al
-2   434	072B  2B FA				     sub di, dx
-2   435	072D  90				     nop
-1   436
-1   437	072E  33 C9				     xor cx, cx	; cx = height -	2
-1   438	0730  8A CC				     mov cl, ah
-1   439	0732  83 E9 02				     sub cx, 2h
-1   440	0735			     DrFrmMLOutLoop:
-1   441	0735  51				     push cx ; saving outter loop cnt
-1   442
-1   443	0736  E8 0036				     call DrawHorLine
-1   444
-1   445						     .DrFrmNewLine
-2   446	0739  90				     nop
-2   447	073A  81 C7 00A0			     add di, DRFRM_SCREEN_W * 2	; next line:
-2   448	073E  33 D2				     xor dx, dx		      ;	di = di	+ screen_w*2-w*2
-2   449	0740  8A D0				     mov dl, al
-2   450	0742  02 D0				     add dl, al
-2   451	0744  2B FA				     sub di, dx
-2   452	0746  90				     nop
-1   453
-1   454	0747  83 EE 06				     sub si, 6d	 ; returning back to D
-1   455
-1   456	074A  59				     pop cx ; ressurecting outter loop cnt
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 9
+    400	06FD					 endp
+    401				     ; ===========================================================
+    402				     ; MovBuf
+    403				     ; Description:
+    404				     ;	 A small helping function to mov prev part of the screen
+    405				     ;	 into buf or the other way round. It moves only	part of	the
+    406				     ;	 screen, hidden	by the frame.
+    407				     ; Assumes:
+    408				     ;	 - ES:[DI] first byte of destination
+    409				     ;	 - DS:[SI] first byte of source
+    410				     ;	 - If DL = 0, bytes from videomem move to buffer,
+    411				     ;	 if DL = 1, bytes from buffer are moved	to videomem.
+    412				     ; DESTROYS:
+    413				     ;	 SI, DI, CX
+    414				     ; ===========================================================
+    415	06FD			     MovBuf	 proc
+    416
+    417	06FD  B9 000F				 mov cx, FrmHeight
+    418
+    419	0700  51		     ShFrmOutL:	 push cx ; saving outter loop cnt
+    420						 ; inner loop
+    421	0701  B9 0014				 mov cx, FrmWidth
+    422	0704  F3> A5				 rep movsw
+    423
+    424	0706  80 FA 00				 cmp dl, 0h
+    425	0709  74 0A				 je VidToBuf
+    426						 ; BufToVid
+    427	070B  83 EF 28				 sub di, FrmWidth*2 ; ret back to line start
+    428	070E  81 C7 00A0			 add di, ScreenW*2  ; next line
+    429	0712  EB 08 90				 jmp CmnPath
+    430	0715  83 EE 28		     VidToBuf:	 sub si, FrmWidth*2 ; ret back to line start
+    431	0718  81 C6 00A0			 add si, ScreenW*2  ; next line
+    432
+    433	071C  59		     CmnPath:	 pop cx	; restoring outter loop	cnt
+    434	071D  E2 E1				 loop ShFrmOutL
+    435
+    436	071F  C3				 ret
+    437	0720					 endp
+    438				     ; ===========================================================
+    439				     include DrFrm.asm
+1   440				     .DrFrmNewLine   macro
+1   441						     nop
+1   442						     add di, DRFRM_SCREEN_W * 2	; next line:
+1   443						     xor dx, dx		      ;	di = di	+ screen_w*2-w*2
+1   444						     mov dl, al
+1   445						     add dl, al
+1   446						     sub di, dx
+1   447						     nop
+1   448						     endm
+1   449
+1   450				     ; ===================================================
+1   451				     ; DrawFrame
+1   452				     ; Description:
+1   453				     ;	 Draws a frame in videomem.
+1   454				     ; Args:
+1   455				     ;	 - AL:	     Width
+1   456				     ;	 - AH:	     Height
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 9
 regfrm.asm
 
 
 
-1   457	074B  E2 E8				     loop DrFrmMLOutLoop
-1   458
-1   459						     ; ====================================
-1   460						     ; drawing bottom line
-1   461
-1   462	074D  83 C6 06				     add si, 6d	 ; setting to G
-1   463
-1   464	0750  E8 001C				     call DrawHorLine
-1   465
-1   466						     ; ====================================
-1   467						     ; print header and	text
-1   468
-1   469	0753  8B F3				     mov si, bx
-1   470	0755  5B				     pop bx  ; bx = row	(bh) and col (bl) of
-1   471							     ; the first symbol	in frame (A)
-1   472
-1   473	0756  80 C3 02				     add bl, 2d	 ; one space between borders
-1   474								 ; and text
-1   475
-1   476	0759  E8 0026				     call PrintText
-1   477
-1   478						     ; ====================================
-1   479						     ; end
-1   480	075C  C3				     ret
-1   481
-1   482				     ; is filled with all frame	symbols
-1   483				     ; and attribute bytes (#) to simplify some	code
-1   484	075D  12*(??)		     DrFrmData	     db	18 DUP(?)
-1   485				     ;			A # B #	... I #
-1   486
-1   487	076F					     endp
-1   488				     ; ===================================================
-1   489
-1   490				     ; ===================================================
-1   491				     ; DrawHorLine
-1   492				     ; Description:
-1   493				     ;	 Helping function DrawFrame. Not for using on its
-1   494				     ;	 own.
-1   495				     ; Assumes:
-1   496				     ;	 - ES =	0B800h
-1   497				     ;	 - DI points at	the place for the first	symbol.
-1   498				     ;	 - SI points at	A, D or	G
-1   499				     ;	 - Width of the	line in	AL
-1   500				     ; DESTROYS:
-1   501				     ;	 CX
-1   502				     ; Outcome:
-1   503				     ;	 - SI points at	the next left bound symbol
-1   504				     ;	 - DI points at	the byte right after the last
-1   505				     ;	 byte of the drawn line.
-1   506				     ;
-1   507				     ; ===================================================
-1   508	076F			     DrawHorLine     proc
+1   457				     ;	 - DS:[SI]:  Address of	string,	containing frame
+1   458				     ;		     symbols and attribute byte	(see ***)
+1   459				     ;	 - DS:[BX]:  Address of	string,	containing
+1   460				     ;		     header and	text as	follows:
+1   461				     ;		     'header\n\ntext', with byte 0FFh in
+1   462				     ;		     the end. '\\' in header or	in text
+1   463				     ;		     means single '\', '\n' in text means
+1   464				     ;		     new line.
+1   465				     ; ***:
+1   466				     ;	 Starts	with the attribute byte, followed by 9
+1   467				     ;	 bytes with symbols, used for frame. Example:
+1   468				     ;
+1   469				     ;	 Bytes:
+1   470				     ;	 41h 42h 43h 44h 45h 46h 47h 48h 49h
+1   471				     ;	 Corresponding symbols:
+1   472				     ;	 A   B	 C   D	 E   F	 G   H	 I
+1   473				     ;
+1   474				     ;	 Frame will be drawn in	the following way:
+1   475				     ;
+1   476				     ;	 AB......BC
+1   477				     ;	 DE......EF
+1   478				     ;	 ..........
+1   479				     ;	 DE......EF
+1   480				     ;	 GH......HI
+1   481				     ;
+1   482				     ;	 So, this string must contain 10 bytes.
+1   483				     ; Attention:
+1   484				     ;	 All args must have sensible values, otherwise UB.
+1   485				     ; DESTROYS:
+1   486				     ;	 CX, SI, DI, DX
+1   487				     ; Changes:
+1   488				     ;	 ES = 0b800h
+1   489				     ; ===================================================
+1   490	0720			     DrawFrame	     proc
+1   491	      =0050		     DRFRM_SCREEN_W  equ 80d
+1   492	      =0019		     DRFRM_SCREEN_H  equ 25d
+1   493
+1   494						     ; ====================================
+1   495						     ; moving style bytes to DrFrmData
+1   496
+1   497	0720  BF 07A6r				     mov di, offset DRFRMDATA
+1   498	0723  8A 34				     mov dh, [si] ; dh = attribute byte
+1   499	0725  46				     inc si ; [si] -> byte_A
+1   500
+1   501	0726  B9 0009				     mov cx, 9d
+1   502						     ;xchg ax, dx
+1   503	0729  8A 14		     DrFrmDatLoop:   mov dl, [si]
+1   504	072B  88 15				     mov [di], dl
+1   505	072D  88 75 01				     mov [di + 1], dh
+1   506	0730  46				     inc si
+1   507	0731  83 C7 02				     add di, 2d
+1   508	0734  E2 F3				     loop DrFrmDatLoop
 1   509
-1   510	076F  A5				     movsw   ; Left bound symb (A, D or	G)
+1   510	0736  BE 07A6r				     mov si, offset DRFRMDATA
 1   511
-1   512						     ; Inner symb (B, E	or H)
-1   513	0770  33 C9				     xor cx, cx
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 10
+1   512						     ; ====================================
+1   513						     ; computing into DI address of the	A
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 10
 regfrm.asm
 
 
 
-1   514	0772  8A C8				     mov cl, al	; cx = w
-1   515	0774  83 E9 02				     sub cx, 2h	; without boundary symbols
-1   516
-1   517	0777  A5		     DrHorLineLoop:  movsw
-1   518	0778  83 EE 02				     sub si, 2h
-1   519	077B  E2 FA				     loop DrHorLineLoop
+1   514
+1   515						     ; cl = col	= (screen_w - w) / 2
+1   516	0739  8A C8				     mov cl, al
+1   517	073B  80 E9 50				     sub cl, DRFRM_SCREEN_W
+1   518	073E  F6 D9				     neg cl
+1   519	0740  D0 E9				     shr cl, 1
 1   520
-1   521	077D  83 C6 02				     add si, 2h
-1   522	0780  A5				     movsw   ; Right bound symb	(C, F or I)
-1   523
-1   524	0781  C3				     ret
-1   525	0782					     endp
-1   526				     ; ===================================================
-1   527				     include PrnText.asm
-2   528				     ; ===================================================
-2   529				     ; PrintText
-2   530				     ; Description:
-2   531				     ;	 Prints	given string of	text into the videomem
-2   532				     ;	 according to the following rules:
-2   533				     ;	 - '\n'	is interpreted as a command to go onto a
-2   534				     ;	 new line. New line starts in the same column, as
-2   535				     ;	 the first symbol (see args), one row lower.
-2   536				     ;	 - '\\'	is printed as a	single '\'.
-2   537				     ;	 - Single '\' followed by any symbol other than	'n'
-2   538				     ;	 is UB!
-2   539				     ;	 - The whole string must end with byte FFh.
-2   540				     ;	 - UB if length	of one line exceeds screen width.
-2   541				     ;	 - Attribute bytes don't change.
-2   542				     ; Args:
-2   543				     ;	 - DS:[SI] pointing at the beginning of	the string.
-2   544				     ;	 - BL -	Col number of the first	symbol.
-2   545				     ;	 - BH -	Row number of the first	symbol.
-2   546				     ; Assumes:
-2   547				     ;	 ES = 0b800h
-2   548				     ; DESTROYS:
-2   549				     ;	 AX, CX, DI, BH, DX
-2   550				     ; Attention:
-2   551				     ;	 All args must have sensible values, otherwise UB.
-2   552				     ; ===================================================
-2   553	0782			     PrintText	     proc
-2   554
-2   555	      =0050		     PrnTextScreenW  equ 80d
-2   556
-2   557	      =005C		     ByteCtrl	     equ 5Ch	 ; '\'
-2   558	      =006E		     ByteNewLine     equ 'n'
-2   559	      =00FF		     ByteStrEnd	     equ 0FFh
-2   560
-2   561						     ; ===================================
-2   562						     ; computing offset	in the videomem
-2   563						     ; of the first symbol into	DI
-2   564
-2   565						     ; AX = row	* 80d =	Bh * 80d
-2   566	0782  33 C0				     xor ax, ax
-2   567	0784  8A C7				     mov al, bh
-2   568	0786  B9 0050				     mov cx, 80d
-2   569	0789  F7 E1				     mul cx
-2   570
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 11
+1   521						     ; ch = row	= (screen_h - h) / 2
+1   522	0742  8A EC				     mov ch, ah
+1   523	0744  80 ED 19				     sub ch, DRFRM_SCREEN_H
+1   524	0747  F6 DD				     neg ch
+1   525	0749  D0 ED				     shr ch, 1
+1   526
+1   527						     ; saving for printing header and text a lot later
+1   528	074B  51				     push cx
+1   529
+1   530						     ; di = (row*screen_w + col)*2 = (ch*screen_w+cl)*2
+1   531						     ; ASSUMING	DRFRM_SCREEN_W = 80
+1   532	074C  33 FF				     xor di, di
+1   533	074E  50				     push ax ; saving
+1   534
+1   535	074F  33 C0				     xor ax, ax
+1   536	0751  8A C5				     mov al, ch
+1   537	0753  BA 0050				     mov dx, 80d
+1   538	0756  F6 E2				     mul dl
+1   539
+1   540	0758  03 F8				     add di, ax
+1   541
+1   542	075A  8A D1				     mov dl, cl
+1   543	075C  03 FA				     add di, dx
+1   544
+1   545	075E  D1 E7				     shl di, 1
+1   546
+1   547						     ; while ax	is free...
+1   548	0760  B8 B800				     mov ax, 0B800h
+1   549	0763  8E C0				     mov es, ax
+1   550
+1   551	0765  58				     pop ax
+1   552
+1   553						     ; ====================================
+1   554						     ; drawing top line
+1   555
+1   556	0766  E8 004F				     call DrawHorLine
+1   557
+1   558						     ; ====================================
+1   559						     ; drawing middle line(s)
+1   560
+1   561						     .DrFrmNewLine
+2   562	0769  90				     nop
+2   563	076A  81 C7 00A0			     add di, DRFRM_SCREEN_W * 2	; next line:
+2   564	076E  33 D2				     xor dx, dx		      ;	di = di	+ screen_w*2-w*2
+2   565	0770  8A D0				     mov dl, al
+2   566	0772  02 D0				     add dl, al
+2   567	0774  2B FA				     sub di, dx
+2   568	0776  90				     nop
+1   569
+1   570	0777  33 C9				     xor cx, cx	; cx = height -	2
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 11
 regfrm.asm
 
 
 
-2   571	078B  8B F8				     mov di, ax	 ; DI =	row*80
-2   572
-2   573	078D  33 C0				     xor ax, ax
-2   574	078F  8A C3				     mov al, bl	 ; AX =	Bl
-2   575	0791  03 F8				     add di, ax	 ; DI += col
-2   576
-2   577	0793  D1 E7				     shl di, 1	    ; di*=2
-2   578
-2   579						     ; remembering offset of the first
-2   580						     ; symbol in the line
-2   581	0795  8B D7				     mov dx, di
-2   582
-2   583						     ; ===================================
-2   584						     ; printing	the string
-2   585
-2   586	0797  8A 04		     PrnStrLoop:     mov al, [si]    ; al = current symbol
-2   587
-2   588	0799  3C FF				     cmp al, BYTESTREND
-2   589	079B  74 1F				     je	PrnStrFinal
-2   590
-2   591	079D  3C 5C				     cmp al, BYTECTRL
-2   592	079F  75 16				     jne PrnStrCommmon
-2   593	07A1  46				     inc si
-2   594	07A2  8A 24				     mov ah, [si]
-2   595	07A4  80 FC 5C				     cmp ah, BYTECTRL
-2   596	07A7  74 0E				     je	PrnStrCommmon
-2   597	07A9  80 FC 6E				     cmp ah, BYTENEWLINE
-2   598	07AC  75 0E				     jne PRNSTRFINAL
-2   599
-2   600	07AE  46				     inc si
-2   601						     ; new line
-2   602	07AF  81 C2 00A0			     add dx, PrnTextScreenW * 2
-2   603	07B3  8B FA				     mov di, dx
-2   604
-2   605	07B5  EB E0				     jmp PrnStrLoop
-2   606
-2   607	07B7  AA		     PrnStrCommmon:  stosb
-2   608	07B8  47				     inc di  ; passing over attribute byte
-2   609	07B9  46				     inc si
-2   610	07BA  EB DB				     jmp PrnStrLoop
-2   611	07BC			     PrnStrFinal:
-2   612	07BC  C3				     ret
-2   613	07BD					     endp
-2   614				     ; ===================================================
-2   615
-1   616
-    617				     include PrnWord.asm
-1   618				     ;===================================================================
-1   619				     ; PrnW
-1   620				     ; Description:
-1   621				     ;	 'Prints' to the given place in	memory AX
-1   622				     ;	 in hex
-1   623				     ; Args:
-1   624				     ;	 - AX -	with word to print.
-1   625				     ;	 - DS:[DI] - place in memory (see ***)
-1   626				     ; ***:
-1   627				     ;	 There must be 8 bytes pointed by DS:[DI]. if AX = ABCDh,
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 12
+1   571	0779  8A CC				     mov cl, ah
+1   572	077B  83 E9 02				     sub cx, 2h
+1   573	077E			     DrFrmMLOutLoop:
+1   574	077E  51				     push cx ; saving outter loop cnt
+1   575
+1   576	077F  E8 0036				     call DrawHorLine
+1   577
+1   578						     .DrFrmNewLine
+2   579	0782  90				     nop
+2   580	0783  81 C7 00A0			     add di, DRFRM_SCREEN_W * 2	; next line:
+2   581	0787  33 D2				     xor dx, dx		      ;	di = di	+ screen_w*2-w*2
+2   582	0789  8A D0				     mov dl, al
+2   583	078B  02 D0				     add dl, al
+2   584	078D  2B FA				     sub di, dx
+2   585	078F  90				     nop
+1   586
+1   587	0790  83 EE 06				     sub si, 6d	 ; returning back to D
+1   588
+1   589	0793  59				     pop cx ; ressurecting outter loop cnt
+1   590	0794  E2 E8				     loop DrFrmMLOutLoop
+1   591
+1   592						     ; ====================================
+1   593						     ; drawing bottom line
+1   594
+1   595	0796  83 C6 06				     add si, 6d	 ; setting to G
+1   596
+1   597	0799  E8 001C				     call DrawHorLine
+1   598
+1   599						     ; ====================================
+1   600						     ; print header and	text
+1   601
+1   602	079C  8B F3				     mov si, bx
+1   603	079E  5B				     pop bx  ; bx = row	(bh) and col (bl) of
+1   604							     ; the first symbol	in frame (A)
+1   605
+1   606	079F  80 C3 02				     add bl, 2d	 ; one space between borders
+1   607								 ; and text
+1   608
+1   609	07A2  E8 0026				     call PrintText
+1   610
+1   611						     ; ====================================
+1   612						     ; end
+1   613	07A5  C3				     ret
+1   614
+1   615				     ; is filled with all frame	symbols
+1   616				     ; and attribute bytes (#) to simplify some	code
+1   617	07A6  12*(??)		     DrFrmData	     db	18 DUP(?)
+1   618				     ;			A # B #	... I #
+1   619
+1   620	07B8					     endp
+1   621				     ; ===================================================
+1   622
+1   623				     ; ===================================================
+1   624				     ; DrawHorLine
+1   625				     ; Description:
+1   626				     ;	 Helping function DrawFrame. Not for using on its
+1   627				     ;	 own.
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 12
 regfrm.asm
 
 
 
-1   628				     ;	 the bytes will	be filled in the following way:
-1   629				     ;	 A _ B _ C _ D _
-1   630				     ;	 where '_' means this byte won't be changed.
-1   631				     ; DESTROYS:
-1   632				     ;	 CX, DX
-1   633				     ;===================================================================
-1   634	07BD			     PrnW	 proc
-1   635
-1   636						 ; loop	start
-1   637	07BD  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
-1   638	07C0  8A D4		     PrnWL:	 mov dl, ah
-1   639	07C2  80 E2 F0				 and dl, 11110000b
-1   640	07C5  C0 EA 04				 shr dl, 4d
-1   641	07C8  80 FA 0A				 cmp dl, 10d
-1   642	07CB  7D 05				 jge short PrnWLtr
-1   643
-1   644	07CD  80 C2 30				 add dl, '0' ; '0' ... '9'
-1   645	07D0  EB 06				 jmp short PrnWFin
-1   646
-1   647	07D2  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
-1   648	07D5  80 EA 0A				 sub dl, 0Ah
+1   628				     ; Assumes:
+1   629				     ;	 - ES =	0B800h
+1   630				     ;	 - DI points at	the place for the first	symbol.
+1   631				     ;	 - SI points at	A, D or	G
+1   632				     ;	 - Width of the	line in	AL
+1   633				     ; DESTROYS:
+1   634				     ;	 CX
+1   635				     ; Outcome:
+1   636				     ;	 - SI points at	the next left bound symbol
+1   637				     ;	 - DI points at	the byte right after the last
+1   638				     ;	 byte of the drawn line.
+1   639				     ;
+1   640				     ; ===================================================
+1   641	07B8			     DrawHorLine     proc
+1   642
+1   643	07B8  A5				     movsw   ; Left bound symb (A, D or	G)
+1   644
+1   645						     ; Inner symb (B, E	or H)
+1   646	07B9  33 C9				     xor cx, cx
+1   647	07BB  8A C8				     mov cl, al	; cx = w
+1   648	07BD  83 E9 02				     sub cx, 2h	; without boundary symbols
 1   649
-1   650	07D8  88 15		     PrnWFin:	 mov byte ptr ds:[di], dl
-1   651	07DA  C1 C0 04				 rol ax, 4
-1   652	07DD  83 C7 02				 add di, 2d
-1   653	07E0  E2 DE				 loop PrnWL
-1   654						 ; loop	end
-1   655
-1   656						 ; end
-1   657	07E2  C3				 ret
-1   658	07E3					 endp
-1   659				     ;===========================================
-1   660
-    661				     ; ===========================================================
-    662				     ; Everything after	this line won't	be saved in the
-    663				     ; interruption mode!
-    664	07E3			     EOP:
-    665
-    666				     ; ===========================================================
-    667				     ; HookEvtHnl
-    668				     ; Description:
-    669				     ;	 A small helping function, which remembers old keyboard
-    670				     ;	 INT Handler vector and	enters own value instead.
-    671				     ; Args:
-    672				     ;	 - DS:[SI] must	be a word var to store offset of the old
-    673				     ;	 handler
-    674				     ;	 - DS:[DI] must	be a word var to store segment of the old
-    675				     ;	 handler
-    676				     ;	 - DX must contain offset (from	cs) of the new INT Handler
-    677				     ; DESTROYS:
-    678				     ;	 AX, BX, ES
-    679				     ; ===========================================================
-    680	07E3			     HookEvtHnl	 proc
-    681
-    682	      =0009		     KeyboardHndl equ 09h
-    683
-    684	07E3  B8 3509				 mov ax, 3509h	     ; getting old keyboard INT
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 13
+1   650	07C0  A5		     DrHorLineLoop:  movsw
+1   651	07C1  83 EE 02				     sub si, 2h
+1   652	07C4  E2 FA				     loop DrHorLineLoop
+1   653
+1   654	07C6  83 C6 02				     add si, 2h
+1   655	07C9  A5				     movsw   ; Right bound symb	(C, F or I)
+1   656
+1   657	07CA  C3				     ret
+1   658	07CB					     endp
+1   659				     ; ===================================================
+1   660				     include PrnText.asm
+2   661				     ; ===================================================
+2   662				     ; PrintText
+2   663				     ; Description:
+2   664				     ;	 Prints	given string of	text into the videomem
+2   665				     ;	 according to the following rules:
+2   666				     ;	 - '\n'	is interpreted as a command to go onto a
+2   667				     ;	 new line. New line starts in the same column, as
+2   668				     ;	 the first symbol (see args), one row lower.
+2   669				     ;	 - '\\'	is printed as a	single '\'.
+2   670				     ;	 - Single '\' followed by any symbol other than	'n'
+2   671				     ;	 is UB!
+2   672				     ;	 - The whole string must end with byte FFh.
+2   673				     ;	 - UB if length	of one line exceeds screen width.
+2   674				     ;	 - Attribute bytes don't change.
+2   675				     ; Args:
+2   676				     ;	 - DS:[SI] pointing at the beginning of	the string.
+2   677				     ;	 - BL -	Col number of the first	symbol.
+2   678				     ;	 - BH -	Row number of the first	symbol.
+2   679				     ; Assumes:
+2   680				     ;	 ES = 0b800h
+2   681				     ; DESTROYS:
+2   682				     ;	 AX, CX, DI, BH, DX
+2   683				     ; Attention:
+2   684				     ;	 All args must have sensible values, otherwise UB.
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 13
 regfrm.asm
 
 
 
-    685	07E6  CD 21				 int 21h	     ; handler vector
-    686
-    687						 ; storing into	given vars
-    688	07E8  89 1C				 mov ds:[si], bx
-    689	07EA  8C C3				 mov bx, es
-    690	07EC  89 1D				 mov ds:[di], bx
-    691
-    692						 ; Keyboard Handler vector
-    693	07EE  6A 00				 push 0
-    694	07F0  07				 pop es
-    695	07F1  BB 0024				 mov bx, 4 * KeyboardHndl
-    696
-    697	07F4  FA				 cli
-    698	07F5  26: 89 17				 mov es:[bx], dx ; offset
-    699	07F8  0E				 push cs
-    700	07F9  26: 8F 47	02			 pop es:[bx+2]	 ; seg
-    701	07FD  FB				 sti
-    702
-    703	07FE  C3				 ret
-    704	07FF					 endp
-    705				     ; ===========================================================
-    706
-    707				     ; ===========================================================
-    708				     ; EndPreps
-    709				     ; Description:
-    710				     ;	 A small helping function to end the preparation's part	of
-    711				     ;	 the program and tell DOS to leave loaded resident part	of
-    712				     ;	 the prog.
-    713				     ; ===========================================================
-    714	07FF			     EndPreps	 proc
-    715
-    716						 ; counting number of paragraphs from cs:00
-    717						 ; until label EOP
-    718	07FF  BA 07E3r				 mov dx, offset	EOP
-    719	0802  C1 EA 04				 shr dx, 4
-    720	0805  42				 inc dx
-    721
-    722						 ; calling the func
-    723	0806  B8 3100				 mov ax, 3100h
-    724	0809  CD 21				 int 21h
-    725
-    726						 ; well, ret is	not quite needed...
-    727	080B					 endp
-    728				     ; ===========================================================
-    729				     end	 Start
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 14
+2   685				     ; ===================================================
+2   686	07CB			     PrintText	     proc
+2   687
+2   688	      =0050		     PrnTextScreenW  equ 80d
+2   689
+2   690	      =005C		     ByteCtrl	     equ 5Ch	 ; '\'
+2   691	      =006E		     ByteNewLine     equ 'n'
+2   692	      =00FF		     ByteStrEnd	     equ 0FFh
+2   693
+2   694						     ; ===================================
+2   695						     ; computing offset	in the videomem
+2   696						     ; of the first symbol into	DI
+2   697
+2   698						     ; AX = row	* 80d =	Bh * 80d
+2   699	07CB  33 C0				     xor ax, ax
+2   700	07CD  8A C7				     mov al, bh
+2   701	07CF  B9 0050				     mov cx, 80d
+2   702	07D2  F7 E1				     mul cx
+2   703
+2   704	07D4  8B F8				     mov di, ax	 ; DI =	row*80
+2   705
+2   706	07D6  33 C0				     xor ax, ax
+2   707	07D8  8A C3				     mov al, bl	 ; AX =	Bl
+2   708	07DA  03 F8				     add di, ax	 ; DI += col
+2   709
+2   710	07DC  D1 E7				     shl di, 1	    ; di*=2
+2   711
+2   712						     ; remembering offset of the first
+2   713						     ; symbol in the line
+2   714	07DE  8B D7				     mov dx, di
+2   715
+2   716						     ; ===================================
+2   717						     ; printing	the string
+2   718
+2   719	07E0  8A 04		     PrnStrLoop:     mov al, [si]    ; al = current symbol
+2   720
+2   721	07E2  3C FF				     cmp al, BYTESTREND
+2   722	07E4  74 1F				     je	PrnStrFinal
+2   723
+2   724	07E6  3C 5C				     cmp al, BYTECTRL
+2   725	07E8  75 16				     jne PrnStrCommmon
+2   726	07EA  46				     inc si
+2   727	07EB  8A 24				     mov ah, [si]
+2   728	07ED  80 FC 5C				     cmp ah, BYTECTRL
+2   729	07F0  74 0E				     je	PrnStrCommmon
+2   730	07F2  80 FC 6E				     cmp ah, BYTENEWLINE
+2   731	07F5  75 0E				     jne PRNSTRFINAL
+2   732
+2   733	07F7  46				     inc si
+2   734						     ; new line
+2   735	07F8  81 C2 00A0			     add dx, PrnTextScreenW * 2
+2   736	07FC  8B FA				     mov di, dx
+2   737
+2   738	07FE  EB E0				     jmp PrnStrLoop
+2   739
+2   740	0800  AA		     PrnStrCommmon:  stosb
+2   741	0801  47				     inc di  ; passing over attribute byte
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 14
+regfrm.asm
+
+
+
+2   742	0802  46				     inc si
+2   743	0803  EB DB				     jmp PrnStrLoop
+2   744	0805			     PrnStrFinal:
+2   745	0805  C3				     ret
+2   746	0806					     endp
+2   747				     ; ===================================================
+2   748
+1   749
+    750				     include PrnWord.asm
+1   751				     ;===================================================================
+1   752				     ; PrnW
+1   753				     ; Description:
+1   754				     ;	 'Prints' to the given place in	memory AX
+1   755				     ;	 in hex
+1   756				     ; Args:
+1   757				     ;	 - AX -	with word to print.
+1   758				     ;	 - ES:[DI] - place in memory (see ***)
+1   759				     ; ***:
+1   760				     ;	 There must be 8 bytes pointed by DS:[DI]. if AX = ABCDh,
+1   761				     ;	 the bytes will	be filled in the following way:
+1   762				     ;	 A _ B _ C _ D _
+1   763				     ;	 where '_' means this byte won't be changed.
+1   764				     ; DESTROYS:
+1   765				     ;	 CX, DX
+1   766				     ;===================================================================
+1   767	0806			     PrnW	 proc
+1   768
+1   769						 ; loop	start
+1   770	0806  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
+1   771	0809  8A D4		     PrnWL:	 mov dl, ah
+1   772	080B  C0 EA 04				 shr dl, 4d
+1   773	080E  80 FA 0A				 cmp dl, 10d
+1   774	0811  7D 05				 jge short PrnWLtr
+1   775
+1   776	0813  80 C2 30				 add dl, '0' ; '0' ... '9'
+1   777	0816  EB 06				 jmp short PrnWFin
+1   778
+1   779	0818  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
+1   780	081B  80 EA 0A				 sub dl, 0Ah
+1   781
+1   782	081E  26: 88 15		     PrnWFin:	 mov byte ptr es:[di], dl
+1   783	0821  C1 C0 04				 rol ax, 4
+1   784	0824  83 C7 02				 add di, 2d
+1   785	0827  E2 E0				 loop PrnWL
+1   786						 ; loop	end
+1   787
+1   788						 ; restoring di	value
+1   789	0829  83 EF 08				 sub di, 8d
+1   790
+1   791						 ; end
+1   792	082C  C3				 ret
+1   793	082D					 endp
+1   794				     ;===========================================
+1   795
+    796				     ; ===========================================================
+    797				     ; Everything after	this line won't	be saved in the
+    798				     ; interruption mode!
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 15
+regfrm.asm
+
+
+
+    799	082D			     EOP:
+    800
+    801				     ; ===========================================================
+    802				     ; HookEvtHnl
+    803				     ; Description:
+    804				     ;	 A small helping function, which remembers old
+    805				     ;	 INT Handler vector and	enters own value instead.
+    806				     ; Args:
+    807				     ;	 - DS:[SI] - a word var	to store offset	of the old handler
+    808				     ;	 - DS:[DI] - a word var	to store segment of the	old handler
+    809				     ;	 - CX -	offset (from cs) of the	new INT	Handler	func
+    810				     ;	 - DX -	Int number (e.g., keyboard is 09h, timer is 08h)
+    811				     ; DESTROYS:
+    812				     ;	 AX, BX, ES
+    813				     ; ===========================================================
+    814	082D			     HookEvtHnl	 proc
+    815
+    816	082D  FA				 cli
+    817
+    818						 ; getting old INT handler vector
+    819	082E  B4 35				 mov ah, 35h
+    820	0830  8A C2				 mov al, dl
+    821	0832  CD 21				 int 21h
+    822
+    823						 ; storing into	given vars
+    824	0834  89 1C				 mov ds:[si], bx
+    825	0836  8C C3				 mov bx, es
+    826	0838  89 1D				 mov ds:[di], bx
+    827
+    828						 ; INT Handler vector
+    829	083A  6A 00				 push 0
+    830	083C  07				 pop es
+    831	083D  8B DA				 mov bx, dx
+    832	083F  C1 E3 02				 shl bx, 2d
+    833
+    834	0842  26: 89 0F				 mov es:[bx], cx ; offset
+    835	0845  0E				 push cs
+    836	0846  26: 8F 47	02			 pop es:[bx+2]	 ; seg
+    837
+    838	084A  FB				 sti
+    839
+    840	084B  C3				 ret
+    841	084C					 endp
+    842				     ; ===========================================================
+    843
+    844				     ; ===========================================================
+    845				     ; EndPreps
+    846				     ; Description:
+    847				     ;	 A small helping function to end the preparation's part	of
+    848				     ;	 the program and tell DOS to leave loaded resident part	of
+    849				     ;	 the prog.
+    850				     ; ===========================================================
+    851	084C			     EndPreps	 proc
+    852
+    853						 ; counting number of paragraphs from cs:00
+    854						 ; until label EOP
+    855	084C  BA 082Dr				 mov dx, offset	EOP
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 16
+regfrm.asm
+
+
+
+    856	084F  C1 EA 04				 shr dx, 4
+    857	0852  42				 inc dx
+    858
+    859						 ; calling the func
+    860	0853  B8 3100				 mov ax, 3100h
+    861	0856  CD 21				 int 21h
+    862
+    863						 ; well, ret is	not quite needed...
+    864	0858					 endp
+    865				     ; ===========================================================
+    866				     end	 Start
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 17
 Symbol Table
 
 
@@ -800,9 +952,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "02/21/24"
+??DATE				  Text	 "02/23/24"
 ??FILENAME			  Text	 "regfrm  "
-??TIME				  Text	 "23:54:18"
+??TIME				  Text	 "17:17:39"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
 @CODE				  Text	 DGROUP
@@ -816,88 +968,86 @@ Symbol Name			  Type	 Value
 @MODEL				  Text	 1
 @STACK				  Text	 DGROUP
 @WORDSIZE			  Text	 2
-BASEREGOFSH			  Number 04A4
-BASEREGOFSL			  Number 04A6
+BASEREGOFS			  Number 04A8
 BUFSIZE				  Number 04B0
 BYTECTRL			  Number 005C
 BYTENEWLINE			  Number 006E
 BYTESTREND			  Number 00FF
-CMNPATH				  Near	 DGROUP:06D3
-DRAWFRAME			  Near	 DGROUP:06D7
-DRAWHORLINE			  Near	 DGROUP:076F
-DRFRMDATA			  Byte	 DGROUP:075D
-DRFRMDATLOOP			  Near	 DGROUP:06E0
-DRFRMMLOUTLOOP			  Near	 DGROUP:0735
+CMNPATH				  Near	 DGROUP:071C
+DRAWFRAME			  Near	 DGROUP:0720
+DRAWHORLINE			  Near	 DGROUP:07B8
+DRFRMDATA			  Byte	 DGROUP:07A6
+DRFRMDATLOOP			  Near	 DGROUP:0729
+DRFRMMLOUTLOOP			  Near	 DGROUP:077E
 DRFRM_SCREEN_H			  Number 0019
 DRFRM_SCREEN_W			  Number 0050
-DRHORLINELOOP			  Near	 DGROUP:0777
-ENDPREPS			  Near	 DGROUP:07FF
-EOP				  Near	 DGROUP:07E3
-EVENTHNDL			  Near	 DGROUP:0183
-EVNTHNDLEND			  Near	 DGROUP:01B3
+DRHORLINELOOP			  Near	 DGROUP:07C0
+ENDPREPS			  Near	 DGROUP:084C
+EOP				  Near	 DGROUP:082D
+EVNTHNDLEND			  Near	 DGROUP:01AF
 FIRSTFRMBYTE			  Number 035C
 FRMHEIGHT			  Number 000F
-FRMTEXT				  Byte	 DGROUP:0130
+FRMTEXT				  Byte	 DGROUP:012B
 FRMWIDTH			  Number 0014
-HIDEFRAME			  Near	 DGROUP:06A3
-HOOKEVTHNL			  Near	 DGROUP:07E3
-ISFRAMESHWN			  Byte	 DGROUP:01D1
-JSHOWFRAME			  Near	 DGROUP:01AA
-KEYBOARDHNDL			  Number 0009
+HIDEFRAME			  Near	 DGROUP:06EC
+HOOKEVTHNL			  Near	 DGROUP:082D
+ISFRAMESHWN			  Byte	 DGROUP:01CD
+JSHOWFRAME			  Near	 DGROUP:01A6
+KBDHNDL				  Near	 DGROUP:017E
 KEYTOGGLE			  Number 003B
-MOVBUF				  Near	 DGROUP:06B4
-OFSAH				  Number 04A4
-OFSAL				  Number 04A6
-OFSBH				  Number 0544
-OFSBL				  Number 0546
-OFSBP_H				  Number 0864
-OFSBP_L				  Number 0866
-OFSCH				  Number 05E4
-OFSCL				  Number 05E6
-Turbo Assembler	 Version 4.1	    02/21/24 23:54:18	    Page 15
+MEOWSTR				  Byte	 DGROUP:067E
+MOVBUF				  Near	 DGROUP:06FD
+OFSAX				  Number 04A8
+OFSBP				  Number 07C8
+OFSBX				  Number 0688
+OFSCX				  Number 0548
+OFSDI				  Number 0908
+OFSDX				  Number 05E8
+OFSREGDIFF			  Number 00A0
+OFSSI				  Number 0868
+OFSSP				  Number 0728
+Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 18
 Symbol Table
 
 
 
-OFSDH				  Number 0684
-OFSDI_H				  Number 07C4
-OFSDI_L				  Number 07C6
-OFSDL				  Number 0686
-OFSSI_H				  Number 0724
-OFSSI_L				  Number 0726
-OFSSP_H				  Number 0904
-OFSSP_L				  Number 0906
-OLDHNDLROFS			  Word	 DGROUP:01CD
-OLDHNDLRSEG			  Word	 DGROUP:01CF
-PRINTTEXT			  Near	 DGROUP:0782
-PRNSTRCOMMMON			  Near	 DGROUP:07B7
-PRNSTRFINAL			  Near	 DGROUP:07BC
-PRNSTRLOOP			  Near	 DGROUP:0797
+OLDKBDHNDLROFS			  Word	 DGROUP:01C9
+OLDKBDHNDLRSEG			  Word	 DGROUP:01CB
+OLDTMRHNDLROFS			  Word	 DGROUP:06C7
+OLDTMRHNDLRSEG			  Word	 DGROUP:06C9
+PRINTTEXT			  Near	 DGROUP:07CB
+PRNSTRCOMMMON			  Near	 DGROUP:0800
+PRNSTRFINAL			  Near	 DGROUP:0805
+PRNSTRLOOP			  Near	 DGROUP:07E0
 PRNTEXTSCREENW			  Number 0050
-PRNW				  Near	 DGROUP:07BD
-PRNWFIN				  Near	 DGROUP:07D8
-PRNWL				  Near	 DGROUP:07C0
-PRNWLTR				  Near	 DGROUP:07D2
-SCREENBUF			  Byte	 DGROUP:01D2
+PRNW				  Near	 DGROUP:0806
+PRNWFIN				  Near	 DGROUP:081E
+PRNWL				  Near	 DGROUP:0809
+PRNWLTR				  Near	 DGROUP:0818
+SCREENBUF			  Byte	 DGROUP:01CE
 SCREENH				  Number 0019
 SCREENW				  Number 0050
-SHFRMOUTL			  Near	 DGROUP:06B7
-SHOWFRAME			  Near	 DGROUP:0682
+SHFRMOUTL			  Near	 DGROUP:0700
+SHOWFRAME			  Near	 DGROUP:06CB
 START				  Near	 DGROUP:0100
-STYLE				  Byte	 DGROUP:0126
-TEST_				  Byte	 DGROUP:011E
+STYLE				  Byte	 DGROUP:0121
 TLCOL				  Number 001E
 TLROW				  Number 0005
-VIDTOBUF			  Near	 DGROUP:06CC
-WRONGKEY			  Near	 DGROUP:01CC
+TMRHNDL				  Near	 DGROUP:0687
+TMRHNDLEND			  Near	 DGROUP:06C6
+TMRHNDLL			  Near	 DGROUP:06A9
+VIDTOBUF			  Near	 DGROUP:0715
+WRONGKEY			  Near	 DGROUP:01C8
 
 Macro Name
 
 .DRFRMNEWLINE
+.POPREGS
+.PUSHREGS
 
 Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
   _DATA				  16  0000 Word	  Public  DATA
-  _TEXT				  16  080B Word	  Public  CODE
+  _TEXT				  16  0858 Word	  Public  CODE
 

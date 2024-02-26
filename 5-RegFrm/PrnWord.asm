@@ -5,7 +5,7 @@
 ;   in hex
 ; Args:
 ;   - AX - with word to print.
-;   - DS:[DI] - place in memory (see ***)
+;   - ES:[DI] - place in memory (see ***)
 ; ***:
 ;   There must be 8 bytes pointed by DS:[DI]. if AX = ABCDh,
 ;   the bytes will be filled in the following way:
@@ -19,7 +19,6 @@ PrnW        proc
             ; loop start
             mov cx, 4h          ; rotating ax 4 times
 PrnWL:      mov dl, ah
-            and dl, 11110000b
             shr dl, 4d
             cmp dl, 10d
             jge short PrnWLtr
@@ -30,11 +29,14 @@ PrnWL:      mov dl, ah
 PrnWLtr:    add dl, 'A' ; 'A' ... 'F'
             sub dl, 0Ah
 
-PrnWFin:    mov byte ptr ds:[di], dl
+PrnWFin:    mov byte ptr es:[di], dl
             rol ax, 4
             add di, 2d
             loop PrnWL
             ; loop end
+
+            ; restoring di value
+            sub di, 8d
 
             ; end
             ret
