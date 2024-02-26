@@ -12,24 +12,22 @@
 ;   A _ B _ C _ D _
 ;   where '_' means this byte won't be changed.
 ; DESTROYS:
-;   CX, DX
+;   CX, DX, SI
 ;===================================================================
 PrnW        proc
+
+            xor dx, dx
 
             ; loop start
             mov cx, 4h          ; rotating ax 4 times
 PrnWL:      mov dl, ah
             shr dl, 4d
-            cmp dl, 10d
-            jge short PrnWLtr
 
-            add dl, '0' ; '0' ... '9'
-            jmp short PrnWFin
+            mov si, offset PrnWData
+            add si, dx
+            mov dl, cs:[si]
 
-PrnWLtr:    add dl, 'A' ; 'A' ... 'F'
-            sub dl, 0Ah
-
-PrnWFin:    mov byte ptr es:[di], dl
+            mov byte ptr es:[di], dl
             rol ax, 4
             add di, 2d
             loop PrnWL
@@ -41,4 +39,5 @@ PrnWFin:    mov byte ptr es:[di], dl
             ; end
             ret
             endp
+PrnWData    db '0123456789ABCDEF'
 ;===========================================

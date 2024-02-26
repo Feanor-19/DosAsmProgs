@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 1
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 1
 regfrm.asm
 
 
@@ -60,12 +60,12 @@ regfrm.asm
      55	0103  BF 01CBr				 mov di, offset	OldKbdHndlrSeg
      56	0106  B9 017Er				 mov cx, offset	KbdHndl
      57	0109  BA 0009				 mov dx, 09h ; Keyboard	INT
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 2
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 2
 regfrm.asm
 
 
 
-     58	010C  E8 071E				 call HookEvtHnl
+     58	010C  E8 0728				 call HookEvtHnl
      59
      60						 ; ==================================
      61						 ; Hooking timer handler
@@ -73,9 +73,9 @@ regfrm.asm
      63	0112  BF 06C9r				 mov di, offset	OldTmrHndlrSeg
      64	0115  B9 0687r				 mov cx, offset	TmrHndl
      65	0118  BA 0008				 mov dx, 08h ; Timer INT
-     66	011B  E8 070F				 call HookEvtHnl
+     66	011B  E8 0719				 call HookEvtHnl
      67
-     68	011E  E8 072B				 call EndPreps
+     68	011E  E8 0735				 call EndPreps
      69
      70
      71						 COMMENT #
@@ -122,7 +122,7 @@ regfrm.asm
     112	012B  52 65 67 69 73 74	65+  FrmText	 db 'Register values:\n\nAX: '
     113	      72 20 76 61 6C 75	65+
     114	      73 3A 5C 6E 5C 6E	41+
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 3
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 3
 regfrm.asm
 
 
@@ -184,7 +184,7 @@ regfrm.asm
 1   169						 ; * maybe correct sp?
 1   170						 ; // TODO -
 1   171
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 4
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 4
 regfrm.asm
 
 
@@ -246,7 +246,7 @@ regfrm.asm
 1   226
     227						 ; ====================================
     228	01C7  CF				 iret
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 5
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 5
 regfrm.asm
 
 
@@ -308,7 +308,7 @@ regfrm.asm
 1   283						 ; * maybe correct sp?
 1   284						 ; // TODO -
 1   285
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 6
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 6
 regfrm.asm
 
 
@@ -370,7 +370,7 @@ regfrm.asm
     340				     ; ===========================================================
     341	06CB			     ShowFrame	 proc
     342
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 7
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 7
 regfrm.asm
 
 
@@ -432,7 +432,7 @@ regfrm.asm
     397	06F9  E8 0001				 call MovBuf
     398
     399	06FC  C3				 ret
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 8
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 8
 regfrm.asm
 
 
@@ -494,7 +494,7 @@ regfrm.asm
 1   454				     ; Args:
 1   455				     ;	 - AL:	     Width
 1   456				     ;	 - AH:	     Height
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 9
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 9
 regfrm.asm
 
 
@@ -556,7 +556,7 @@ regfrm.asm
 1   511
 1   512						     ; ====================================
 1   513						     ; computing into DI address of the	A
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 10
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 10
 regfrm.asm
 
 
@@ -618,7 +618,7 @@ regfrm.asm
 2   568	0776  90				     nop
 1   569
 1   570	0777  33 C9				     xor cx, cx	; cx = height -	2
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 11
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 11
 regfrm.asm
 
 
@@ -680,7 +680,7 @@ regfrm.asm
 1   625				     ; Description:
 1   626				     ;	 Helping function DrawFrame. Not for using on its
 1   627				     ;	 own.
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 12
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 12
 regfrm.asm
 
 
@@ -742,7 +742,7 @@ regfrm.asm
 2   682				     ;	 AX, CX, DI, BH, DX
 2   683				     ; Attention:
 2   684				     ;	 All args must have sensible values, otherwise UB.
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 13
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 13
 regfrm.asm
 
 
@@ -804,7 +804,7 @@ regfrm.asm
 2   739
 2   740	0800  AA		     PrnStrCommmon:  stosb
 2   741	0801  47				     inc di  ; passing over attribute byte
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 14
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 14
 regfrm.asm
 
 
@@ -832,119 +832,120 @@ regfrm.asm
 1   762				     ;	 A _ B _ C _ D _
 1   763				     ;	 where '_' means this byte won't be changed.
 1   764				     ; DESTROYS:
-1   765				     ;	 CX, DX
+1   765				     ;	 CX, DX, SI
 1   766				     ;===================================================================
 1   767	0806			     PrnW	 proc
 1   768
-1   769						 ; loop	start
-1   770	0806  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
-1   771	0809  8A D4		     PrnWL:	 mov dl, ah
-1   772	080B  C0 EA 04				 shr dl, 4d
-1   773	080E  80 FA 0A				 cmp dl, 10d
-1   774	0811  7D 05				 jge short PrnWLtr
+1   769	0806  33 D2				 xor dx, dx
+1   770
+1   771						 ; loop	start
+1   772	0808  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
+1   773	080B  8A D4		     PrnWL:	 mov dl, ah
+1   774	080D  C0 EA 04				 shr dl, 4d
 1   775
-1   776	0813  80 C2 30				 add dl, '0' ; '0' ... '9'
-1   777	0816  EB 06				 jmp short PrnWFin
-1   778
-1   779	0818  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
-1   780	081B  80 EA 0A				 sub dl, 0Ah
-1   781
-1   782	081E  26: 88 15		     PrnWFin:	 mov byte ptr es:[di], dl
-1   783	0821  C1 C0 04				 rol ax, 4
-1   784	0824  83 C7 02				 add di, 2d
-1   785	0827  E2 E0				 loop PrnWL
-1   786						 ; loop	end
-1   787
-1   788						 ; restoring di	value
-1   789	0829  83 EF 08				 sub di, 8d
-1   790
-1   791						 ; end
-1   792	082C  C3				 ret
-1   793	082D					 endp
-1   794				     ;===========================================
-1   795
-    796				     ; ===========================================================
-    797				     ; Everything after	this line won't	be saved in the
-    798				     ; interruption mode!
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 15
+1   776	0810  BE 0827r				 mov si, offset	PrnWData
+1   777	0813  03 F2				 add si, dx
+1   778	0815  2E: 8A 14				 mov dl, cs:[si]
+1   779
+1   780	0818  26: 88 15				 mov byte ptr es:[di], dl
+1   781	081B  C1 C0 04				 rol ax, 4
+1   782	081E  83 C7 02				 add di, 2d
+1   783	0821  E2 E8				 loop PrnWL
+1   784						 ; loop	end
+1   785
+1   786						 ; restoring di	value
+1   787	0823  83 EF 08				 sub di, 8d
+1   788
+1   789						 ; end
+1   790	0826  C3				 ret
+1   791	0827					 endp
+1   792	0827  30 31 32 33 34 35	36+  PrnWData	 db '0123456789ABCDEF'
+    793	      37 38 39 41 42 43	44+
+    794	      45 46
+1   795				     ;===========================================
+1   796
+    797				     ; ===========================================================
+    798				     ; Everything after	this line won't	be saved in the
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 15
 regfrm.asm
 
 
 
-    799	082D			     EOP:
-    800
-    801				     ; ===========================================================
-    802				     ; HookEvtHnl
-    803				     ; Description:
-    804				     ;	 A small helping function, which remembers old
-    805				     ;	 INT Handler vector and	enters own value instead.
-    806				     ; Args:
-    807				     ;	 - DS:[SI] - a word var	to store offset	of the old handler
-    808				     ;	 - DS:[DI] - a word var	to store segment of the	old handler
-    809				     ;	 - CX -	offset (from cs) of the	new INT	Handler	func
-    810				     ;	 - DX -	Int number (e.g., keyboard is 09h, timer is 08h)
-    811				     ; DESTROYS:
-    812				     ;	 AX, BX, ES
-    813				     ; ===========================================================
-    814	082D			     HookEvtHnl	 proc
-    815
-    816	082D  FA				 cli
-    817
-    818						 ; getting old INT handler vector
-    819	082E  B4 35				 mov ah, 35h
-    820	0830  8A C2				 mov al, dl
-    821	0832  CD 21				 int 21h
-    822
-    823						 ; storing into	given vars
-    824	0834  89 1C				 mov ds:[si], bx
-    825	0836  8C C3				 mov bx, es
-    826	0838  89 1D				 mov ds:[di], bx
-    827
-    828						 ; INT Handler vector
-    829	083A  6A 00				 push 0
-    830	083C  07				 pop es
-    831	083D  8B DA				 mov bx, dx
-    832	083F  C1 E3 02				 shl bx, 2d
-    833
-    834	0842  26: 89 0F				 mov es:[bx], cx ; offset
-    835	0845  0E				 push cs
-    836	0846  26: 8F 47	02			 pop es:[bx+2]	 ; seg
-    837
-    838	084A  FB				 sti
-    839
-    840	084B  C3				 ret
-    841	084C					 endp
-    842				     ; ===========================================================
-    843
-    844				     ; ===========================================================
-    845				     ; EndPreps
-    846				     ; Description:
-    847				     ;	 A small helping function to end the preparation's part	of
-    848				     ;	 the program and tell DOS to leave loaded resident part	of
-    849				     ;	 the prog.
-    850				     ; ===========================================================
-    851	084C			     EndPreps	 proc
-    852
-    853						 ; counting number of paragraphs from cs:00
-    854						 ; until label EOP
-    855	084C  BA 082Dr				 mov dx, offset	EOP
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 16
+    799				     ; interruption mode!
+    800	0837			     EOP:
+    801
+    802				     ; ===========================================================
+    803				     ; HookEvtHnl
+    804				     ; Description:
+    805				     ;	 A small helping function, which remembers old
+    806				     ;	 INT Handler vector and	enters own value instead.
+    807				     ; Args:
+    808				     ;	 - DS:[SI] - a word var	to store offset	of the old handler
+    809				     ;	 - DS:[DI] - a word var	to store segment of the	old handler
+    810				     ;	 - CX -	offset (from cs) of the	new INT	Handler	func
+    811				     ;	 - DX -	Int number (e.g., keyboard is 09h, timer is 08h)
+    812				     ; DESTROYS:
+    813				     ;	 AX, BX, ES
+    814				     ; ===========================================================
+    815	0837			     HookEvtHnl	 proc
+    816
+    817	0837  FA				 cli
+    818
+    819						 ; getting old INT handler vector
+    820	0838  B4 35				 mov ah, 35h
+    821	083A  8A C2				 mov al, dl
+    822	083C  CD 21				 int 21h
+    823
+    824						 ; storing into	given vars
+    825	083E  89 1C				 mov ds:[si], bx
+    826	0840  8C C3				 mov bx, es
+    827	0842  89 1D				 mov ds:[di], bx
+    828
+    829						 ; INT Handler vector
+    830	0844  6A 00				 push 0
+    831	0846  07				 pop es
+    832	0847  8B DA				 mov bx, dx
+    833	0849  C1 E3 02				 shl bx, 2d
+    834
+    835	084C  26: 89 0F				 mov es:[bx], cx ; offset
+    836	084F  0E				 push cs
+    837	0850  26: 8F 47	02			 pop es:[bx+2]	 ; seg
+    838
+    839	0854  FB				 sti
+    840
+    841	0855  C3				 ret
+    842	0856					 endp
+    843				     ; ===========================================================
+    844
+    845				     ; ===========================================================
+    846				     ; EndPreps
+    847				     ; Description:
+    848				     ;	 A small helping function to end the preparation's part	of
+    849				     ;	 the program and tell DOS to leave loaded resident part	of
+    850				     ;	 the prog.
+    851				     ; ===========================================================
+    852	0856			     EndPreps	 proc
+    853
+    854						 ; counting number of paragraphs from cs:00
+    855						 ; until label EOP
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 16
 regfrm.asm
 
 
 
-    856	084F  C1 EA 04				 shr dx, 4
-    857	0852  42				 inc dx
-    858
-    859						 ; calling the func
-    860	0853  B8 3100				 mov ax, 3100h
-    861	0856  CD 21				 int 21h
-    862
-    863						 ; well, ret is	not quite needed...
-    864	0858					 endp
-    865				     ; ===========================================================
-    866				     end	 Start
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 17
+    856	0856  BA 0837r				 mov dx, offset	EOP
+    857	0859  C1 EA 04				 shr dx, 4
+    858	085C  42				 inc dx
+    859
+    860						 ; calling the func
+    861	085D  B8 3100				 mov ax, 3100h
+    862	0860  CD 21				 int 21h
+    863
+    864						 ; well, ret is	not quite needed...
+    865	0862					 endp
+    866				     ; ===========================================================
+    867				     end	 Start
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 17
 Symbol Table
 
 
@@ -952,9 +953,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "02/23/24"
+??DATE				  Text	 "02/26/24"
 ??FILENAME			  Text	 "regfrm  "
-??TIME				  Text	 "17:17:39"
+??TIME				  Text	 "13:24:09"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
 @CODE				  Text	 DGROUP
@@ -982,15 +983,15 @@ DRFRMMLOUTLOOP			  Near	 DGROUP:077E
 DRFRM_SCREEN_H			  Number 0019
 DRFRM_SCREEN_W			  Number 0050
 DRHORLINELOOP			  Near	 DGROUP:07C0
-ENDPREPS			  Near	 DGROUP:084C
-EOP				  Near	 DGROUP:082D
+ENDPREPS			  Near	 DGROUP:0856
+EOP				  Near	 DGROUP:0837
 EVNTHNDLEND			  Near	 DGROUP:01AF
 FIRSTFRMBYTE			  Number 035C
 FRMHEIGHT			  Number 000F
 FRMTEXT				  Byte	 DGROUP:012B
 FRMWIDTH			  Number 0014
 HIDEFRAME			  Near	 DGROUP:06EC
-HOOKEVTHNL			  Near	 DGROUP:082D
+HOOKEVTHNL			  Near	 DGROUP:0837
 ISFRAMESHWN			  Byte	 DGROUP:01CD
 JSHOWFRAME			  Near	 DGROUP:01A6
 KBDHNDL				  Near	 DGROUP:017E
@@ -1006,7 +1007,7 @@ OFSDX				  Number 05E8
 OFSREGDIFF			  Number 00A0
 OFSSI				  Number 0868
 OFSSP				  Number 0728
-Turbo Assembler	 Version 4.1	    02/23/24 17:17:39	    Page 18
+Turbo Assembler	 Version 4.1	    02/26/24 13:24:09	    Page 18
 Symbol Table
 
 
@@ -1021,9 +1022,8 @@ PRNSTRFINAL			  Near	 DGROUP:0805
 PRNSTRLOOP			  Near	 DGROUP:07E0
 PRNTEXTSCREENW			  Number 0050
 PRNW				  Near	 DGROUP:0806
-PRNWFIN				  Near	 DGROUP:081E
-PRNWL				  Near	 DGROUP:0809
-PRNWLTR				  Near	 DGROUP:0818
+PRNWDATA			  Byte	 DGROUP:0827
+PRNWL				  Near	 DGROUP:080B
 SCREENBUF			  Byte	 DGROUP:01CE
 SCREENH				  Number 0019
 SCREENW				  Number 0050
@@ -1049,5 +1049,5 @@ Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
   _DATA				  16  0000 Word	  Public  DATA
-  _TEXT				  16  0858 Word	  Public  CODE
+  _TEXT				  16  0862 Word	  Public  CODE
 
