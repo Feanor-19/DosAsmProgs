@@ -19,9 +19,6 @@ org 100h
             push es
             push ds
 
-            ; * maybe correct sp?
-            ; // TODO -
-
             endm
 
 ; ===========================================================
@@ -68,16 +65,6 @@ Start:
             call EndPreps
 
 
-            COMMENT #
-            call ShowFrame
-            mov IsFrameShwn, 1
-            call TmrHndl
-
-            mov ax, 4c13h
-            int 21h
-            #
-
-
 ; ===========================================================
 ; ================== GLOBAL CONSTANTS =======================
 KeyToggle   equ 3Bh ; F1 pressed
@@ -96,16 +83,9 @@ TLRow       equ ( ScreenH - FrmHeight ) / 2 ; Row of Top Left char
 FirstFrmByte equ (TLRow * ScreenW + TLCol)*2
 
 ; Offsets in videomem for registers' values from 0B800h
-BaseRegOfs equ ((TLRow + 2) * ScreenW + (TLCol + 6) ) * 2
+BaseRegOfs  equ ((TLRow + 2) * ScreenW + (TLCol + 6) ) * 2
 
 OfsAX       equ BaseRegOfs + 0 * ScreenW*2
-OfsCX       equ BaseRegOfs + 1 * ScreenW*2
-OfsDX       equ BaseRegOfs + 2 * ScreenW*2
-OfsBX       equ BaseRegOfs + 3 * ScreenW*2
-OfsSP       equ BaseRegOfs + 4 * ScreenW*2
-OfsBP       equ BaseRegOfs + 5 * ScreenW*2
-OfsSI       equ BaseRegOfs + 6 * ScreenW*2
-OfsDI       equ BaseRegOfs + 7 * ScreenW*2
 
 Style       db  4Eh, '…Õª∫ ∫»Õº'
 FrmText     db 'Register values:\n\nAX: '
@@ -117,6 +97,13 @@ FrmText     db 'Register values:\n\nAX: '
             db 'HL\nSI: '
             db 'HL\nDI: '
             db 'HL', 0FFh
+; ===========================================================
+; =================== GLOBAL VARIABLES ======================
+
+IsFrameShwn db 0        ; 0 if frame isn't shown, 1 otherwise
+; Buf for the old screen state.
+ScreenBuf   db (FrmWidth*2)*(FrmHeight*2) DUP(?)
+BufSize     equ $ - ScreenBuf
 
 ; ===========================================================
 ; KbdHndl - RESIDENTIAL FUNCTION
@@ -190,13 +177,6 @@ OldKbdHndlrOfs  dw 0        ; offset
 OldKbdHndlrSeg  dw 0        ; segment
 
             endp
-; ===========================================================
-; =================== GLOBAL VARIABLES ======================
-
-IsFrameShwn db 0        ; 0 if frame isn't shown, 1 otherwise
-; Buf for the old screen state.
-ScreenBuf   db (FrmWidth*2)*(FrmHeight*2) DUP(?)
-BufSize     equ $ - ScreenBuf
 
 ; ===========================================================
 
@@ -207,13 +187,10 @@ BufSize     equ $ - ScreenBuf
 ;   shown ( IsFrameShwn == 1 ), types in current registers'
 ;   values.
 ; ===========================================================
-MeowStr     db 'MMEEOOWW', '$'
-
 TmrHndl     proc
 
 OfsRegDiff  equ ScreenW * 2
 
-            ; èéóÖåì çÖ êÄÅéíÄÖí cmp [ISFRAMESHWN], 1h ??
             cmp cs:[ISFRAMESHWN], 0h
             je TmrHndlEnd
 
