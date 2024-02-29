@@ -8,7 +8,9 @@
 
 //! ATTENTION
 //! In order to change the program to cure, see common.h
-//! and change HASH_UNCURED_REF, HASH_CURED_REF, BYTES_TO_CURE
+//! and change HASH_UNCURED_REF, HASH_CURED_REF, BYTES_TO_CURE. Uncomment
+//! "#define PRINT_GIVEN_PROG_HASH", compile and execute the
+//! the prog to get the needed hash value.
 
 int main( int argc, const char *argv[] )
 {
@@ -22,6 +24,10 @@ int main( int argc, const char *argv[] )
     PRINT_ERROR_MSG_AND_RET_IF( st_code != STATUS_OK, st_code );
 
     hash_t hash_uncured = compute_hash( prog_file.data, prog_file.data_size );
+
+#ifdef PRINT_GIVEN_PROG_HASH
+    printf( "Given program's hash: <%lld>\n", hash_uncured );
+#endif
 
     Result res = RES_DEFAULT;
     if ( hash_uncured != HASH_UNCURED_REF )
@@ -42,7 +48,8 @@ int main( int argc, const char *argv[] )
 
     if ( res == RES_PROG_CURED )
     {
-        write_prog_file( &prog_file, file_name );
+        st_code = write_prog_file( &prog_file, file_name );
+        PRINT_ERROR_MSG_AND_RET_IF( st_code != STATUS_OK, STATUS_ERR_DURING_WRITING_INTO_FILE );
     }
 
     ProgFile_dtor( &prog_file );

@@ -57,10 +57,7 @@ StatusCode write_prog_file( ProgFile *prog_file_ptr, const char *file_name )
     assert(prog_file_ptr);
     assert(file_name);
 
-    char cured_file_name[MAX_FILE_NAME_LEN] = "CURED_";
-    strcpy( cured_file_name + 6, file_name );
-
-    FILE *file_ptr = fopen( cured_file_name, "wb" );
+    FILE *file_ptr = fopen( file_name, "wb" );
     if ( file_ptr == NULL )
         return STATUS_ERR_CANT_CREATE_FILE;
 
