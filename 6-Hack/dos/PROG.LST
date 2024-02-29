@@ -1,0 +1,301 @@
+Turbo Assembler	 Version 4.1	    02/26/24 22:15:31	    Page 1
+prog.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     .286
+      4				     org 100h
+      5				     ; ===========================================================
+      6				     .NewLine	 macro
+      7
+      8						 mov dl, 0Ah
+      9						 mov ah, 02h
+     10						 int 21h      ;	putc('\n')
+     11
+     12						 mov dl, 0Dh
+     13						 mov ah, 02h
+     14						 int 21h      ;	putc('\n')
+     15
+     16						 endm
+     17				     ; ===========================================================
+     18	0100			     Start:
+     19						 ; ===============================================
+     20						 ; getting the password
+     21	0100  BF 014Ar				 mov di, offset	PswdBuf
+     22	0103  E8 005A				 call GetPassword
+     23
+     24						 ; ===============================================
+     25						 ; checking the	password
+     26	0106  B9 0008 90			 mov cx, ChadPswdLen
+     27	010A  BE 014Ar				 mov si, offset	PswdBuf
+     28	010D  BF 0125r				 mov di, offset	ChadPswd
+     29	0110  E8 003F				 call CheckPswd
+     30
+     31	0113  3C 01				 cmp al, 1
+     32	0115  75 06				 jne AccDenied
+     33	0117  E8 0089				 call AccessAllowed
+     34	011A  EB 04 90				 jmp ProgEnd
+     35	011D  E8 00AA		     AccDenied:	 call AccessDenied
+     36
+     37						 ; ===============================================
+     38						 ; end
+     39	0120			     ProgEnd:
+     40	0120  B8 4C13				 mov ax, 4c13h
+     41	0123  CD 21				 int 21h
+     42
+     43
+     44				     ; ===========================================================
+     45				     ; ====================GLOBAL CONSTANTS=======================
+     46	      =0008		     ChadPswdLen equ 8
+     47	0125  08*(2A)		     ChadPswd	 db ChadPswdLen	DUP('*') ; yes,	the password is	'*'s
+     48	012D  50 6C 65 61 73 65	2C+  MsgAskPswd	 db 'Please, enter the password: ', '$'
+     49	      20 65 6E 74 65 72	20+
+     50	      74 68 65 20 70 61	73+
+     51	      73 77 6F 72 64 3A	20+
+     52	      24
+     53
+     54				     ; ===========================================================
+     55				     ; ====================GLOBAL VARIABLES=======================
+     56	014A  08*(??)		     PswdBuf	 db 8 DUP(?)
+     57
+Turbo Assembler	 Version 4.1	    02/26/24 22:15:31	    Page 2
+prog.asm
+
+
+
+     58				     ; ===========================================================
+     59				     ; CheckPswd
+     60				     ; Description:
+     61				     ;	 Checks	if the password	is right.
+     62				     ;	 (Compares two blocks of bytes of size N).
+     63				     ; Args:
+     64				     ;	 - N in	CX
+     65				     ;	 - First address in DS:[SI]
+     66				     ;	 - Second address in DS:[DI]
+     67				     ; Result:
+     68				     ;	 - AL is set to	1 if blocks are	equal. (password is right)
+     69				     ;	 - AL is 0, if blocks aren't equal. (password is wrong)
+     70				     ; DESTROYS:
+     71				     ;	 SI, DI, CX
+     72				     ; ===========================================================
+     73	0152			     CheckPswd	 proc
+     74
+     75	0152  1E				 push ds
+     76	0153  07				 pop es
+     77
+     78	0154  F3> A6				 repe cmpsb
+     79
+     80						 ; sete	al is in the future :-(
+     81	0156  74 05				 je CheckPswd1
+     82	0158  B0 00				 mov al, 0h
+     83	015A  EB 03 90				 jmp CheckPswdF
+     84	015D  B0 01		     CheckPswd1: mov al, 1h
+     85	015F			     CheckPswdF:
+     86
+     87	015F  C3				 ret
+     88	0160					 endp
+     89				     ; ===========================================================
+     90				     ; GetPassword
+     91				     ; Description:
+     92				     ;	 Asks user to enter password and reads it into given buf.
+     93				     ;	 Enter means end of input.
+     94				     ; Args:
+     95				     ;	 - DS:[DI] - buffer to store entered password.
+     96				     ; Destroys:
+     97				     ;	 DI
+     98				     ; ===========================================================
+     99	0160			     GetPassword proc
+    100
+    101	0160  B4 09				 mov ah, 09h
+    102	0162  BA 012Dr				 mov dx, offset	MsgAskPswd
+    103	0165  CD 21				 int 21h
+    104
+    105	0167  B2 2A				 mov dl, '*' ; to print	later
+    106
+    107	0169  B4 08		     GetPswdL:	 mov ah, 08h ; getc()
+    108	016B  CD 21				 int 21h
+    109
+    110	016D  3C 0D				 cmp al, 13d ; if 'enter'
+    111	016F  74 09				 je short GetPswdEnd
+    112
+    113	0171  88 05				 mov [DI], al
+    114	0173  47				 inc di
+Turbo Assembler	 Version 4.1	    02/26/24 22:15:31	    Page 3
+prog.asm
+
+
+
+    115
+    116	0174  B4 02				 mov ah, 02h
+    117	0176  CD 21				 int 21h      ;	putc('*')
+    118
+    119	0178  EB EF				 jmp GetPswdL
+    120
+    121	017A			     GetPswdEnd:
+    122						 .NewLine
+1   123
+1   124	017A  B2 0A				 mov dl, 0Ah
+1   125	017C  B4 02				 mov ah, 02h
+1   126	017E  CD 21				 int 21h      ;	putc('\n')
+1   127
+1   128	0180  B2 0D				 mov dl, 0Dh
+1   129	0182  B4 02				 mov ah, 02h
+1   130	0184  CD 21				 int 21h      ;	putc('\n')
+1   131
+    132
+    133	0186  C3				 ret
+    134	0187					 endp
+    135				     ; ===========================================================
+    136				     ; AccessAllowed
+    137				     ; Description:
+    138				     ;	 Access	to very	important data is allowed.
+    139				     ; DESTROYS:
+    140				     ;	 AX, DX
+    141				     ; ===========================================================
+    142	0187  41 63 63 65 73 73	20+  MsgAccessAlwd   db	'Access	is ALLOWED! Welcome!', '$'
+    143	      69 73 20 41 4C 4C	4F+
+    144	      57 45 44 21 20 57	65+
+    145	      6C 63 6F 6D 65 21	24
+    146	01A3			     AccessAllowed   proc
+    147
+    148	01A3  B4 09				     mov ah, 09h
+    149	01A5  BA 0187r				     mov dx, offset MsgAccessAlwd
+    150	01A8  CD 21				     int 21h
+    151
+    152	01AA  C3				     ret
+    153
+    154	01AB					     endp
+    155				     ; ===========================================================
+    156				     ; AccessDenied
+    157				     ; Description:
+    158				     ;	 Access	to very	important data is allowed.
+    159				     ; DESTROYS:
+    160				     ;	 AX, DX
+    161				     ; ===========================================================
+    162	01AB  41 63 63 65 73 73	20+  MsgAccessDend   db	'Access	is DENIED! NOT Welcome!', '$'
+    163	      69 73 20 44 45 4E	49+
+    164	      45 44 21 20 4E 4F	54+
+    165	      20 57 65 6C 63 6F	6D+
+    166	      65 21 24
+    167	01CA			     AccessDenied    proc
+    168
+    169	01CA  B4 09				     mov ah, 09h
+    170	01CC  BA 01ABr				     mov dx, offset MsgAccessDend
+    171	01CF  CD 21				     int 21h
+Turbo Assembler	 Version 4.1	    02/26/24 22:15:31	    Page 4
+prog.asm
+
+
+
+    172
+    173	01D1  C3				     ret
+    174
+    175	01D2					     endp
+    176				     ; ===========================================================
+    177				     include prnw.asm
+1   178				     ;-------------------------------------------
+1   179				     ; PrnW
+1   180				     ; Description:
+1   181				     ;	 Prints	to standart output AX
+1   182				     ;	 in hex	(using int 21h (02h))
+1   183				     ; DESTROYS:
+1   184				     ;	 CX, DX
+1   185				     ;-------------------------------------------
+1   186	01D2			     PrnW	 proc
+1   187
+1   188	01D2  BE 0003				 mov si, 3h	     ; starting	from smallest bytes,
+1   189								     ; which are in the	rightmost character
+1   190
+1   191						 ; loop	start
+1   192	01D5  B9 0004				 mov cx, 4h	     ; rotating	ax 4 times
+1   193	01D8  8A D0		     PrnWL:	 mov dl, al
+1   194	01DA  80 E2 0F				 and dl, 00001111b
+1   195	01DD  80 FA 0A				 cmp dl, 10d
+1   196	01E0  7D 05				 jge PrnWLtr
+1   197
+1   198	01E2  80 C2 30				 add dl, '0' ; '0' ... '9'
+1   199	01E5  EB 06				 jmp short PrnWFin
+1   200
+1   201	01E7  80 C2 41		     PrnWLtr:	 add dl, 'A' ; 'A' ... 'F'
+1   202	01EA  80 EA 0A				 sub dl, 0Ah
+1   203
+1   204	01ED  88 94 0201r	     PrnWFin:	 mov byte ptr [PrnWData	+ si], dl
+1   205	01F1  C1 C8 04				 ror ax, 4
+1   206	01F4  4E				 dec si
+1   207	01F5  E2 E1				 loop PrnWL
+1   208						 ; loop	end
+1   209
+1   210						 ; printing
+1   211	01F7  50				 push ax		 ; saving ax
+1   212	01F8  BA 0201r				 mov dx, offset	PRNWDATA
+1   213	01FB  B4 09				 mov ah, 09h
+1   214	01FD  CD 21				 int 21h
+1   215	01FF  58				 pop ax			 ; ressurecting	ax
+1   216
+1   217						 ; end
+1   218	0200  C3				 ret
+1   219	0201					 endp
+1   220
+1   221	0201  ?? ?? ?? ?? 24	     PrnWData	 db ?, ?, ?, ?,	'$'
+1   222				     ;-------------------------------------------
+1   223
+    224				     end	 Start
+Turbo Assembler	 Version 4.1	    02/26/24 22:15:31	    Page 5
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/26/24"
+??FILENAME			  Text	 "prog	  "
+??TIME				  Text	 "22:15:31"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0707H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 PROG
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+ACCDENIED			  Near	 DGROUP:011D
+ACCESSALLOWED			  Near	 DGROUP:01A3
+ACCESSDENIED			  Near	 DGROUP:01CA
+CHADPSWD			  Byte	 DGROUP:0125
+CHADPSWDLEN			  Number 0008
+CHECKPSWD			  Near	 DGROUP:0152
+CHECKPSWD1			  Near	 DGROUP:015D
+CHECKPSWDF			  Near	 DGROUP:015F
+GETPASSWORD			  Near	 DGROUP:0160
+GETPSWDEND			  Near	 DGROUP:017A
+GETPSWDL			  Near	 DGROUP:0169
+MSGACCESSALWD			  Byte	 DGROUP:0187
+MSGACCESSDEND			  Byte	 DGROUP:01AB
+MSGASKPSWD			  Byte	 DGROUP:012D
+PRNW				  Near	 DGROUP:01D2
+PRNWDATA			  Byte	 DGROUP:0201
+PRNWFIN				  Near	 DGROUP:01ED
+PRNWL				  Near	 DGROUP:01D8
+PRNWLTR				  Near	 DGROUP:01E7
+PROGEND				  Near	 DGROUP:0120
+PSWDBUF				  Byte	 DGROUP:014A
+START				  Near	 DGROUP:0100
+
+Macro Name
+
+.NEWLINE
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  0206 Word	  Public  CODE
+
